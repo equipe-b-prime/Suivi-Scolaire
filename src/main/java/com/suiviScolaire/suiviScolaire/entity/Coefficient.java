@@ -7,7 +7,10 @@ import java.math.BigDecimal;
  * Représente  le coefficient dune matiere
  */
 @Entity
-@Table(name = "coefficient")
+@Table(name = "coefficient", indexes = {
+    @Index(name = "idx_coefficient_niveau", columnList = "niveau_id"),
+    @Index(name = "idx_coefficient_matiere", columnList = "matiere_id")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

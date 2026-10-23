@@ -1,6 +1,5 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.suiviScolaire.suiviScolaire.entity.Annee;
@@ -12,10 +11,18 @@ import com.suiviScolaire.suiviScolaire.dto.AnneeResponseDto;
  * Fournit la conversion entité/DTO des années.
  */
 @Service
-@RequiredArgsConstructor
 public class AnneeService {
 
     private final AnneeRepository anneeRepository;
+
+    /**
+     * Constructeur injectant le repository des années scolaires.
+     *
+     * @param anneeRepository le repository des années scolaires
+     */
+    public AnneeService(AnneeRepository anneeRepository) {
+        this.anneeRepository = anneeRepository;
+    }
 
     /**
      * Convertit une entité année en objet de réponse.

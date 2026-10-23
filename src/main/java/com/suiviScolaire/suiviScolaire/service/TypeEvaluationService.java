@@ -1,6 +1,5 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.suiviScolaire.suiviScolaire.entity.TypeEvaluation;
@@ -12,10 +11,18 @@ import com.suiviScolaire.suiviScolaire.dto.TypeEvaluationResponseDto;
  * Fournit la conversion entité/DTO des types d'évaluation.
  */
 @Service
-@RequiredArgsConstructor
 public class TypeEvaluationService {
 
     private final TypeEvaluationRepository typeEvaluationRepository;
+
+    /**
+     * Constructeur injectant le repository des types d'évaluation.
+     *
+     * @param typeEvaluationRepository le repository des types d'évaluation
+     */
+    public TypeEvaluationService(TypeEvaluationRepository typeEvaluationRepository) {
+        this.typeEvaluationRepository = typeEvaluationRepository;
+    }
 
     /**
      * Convertit une entité type d'évaluation en objet de réponse.

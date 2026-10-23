@@ -7,7 +7,9 @@ import java.time.LocalDate;
  * Represente un élève dans le système de suivi scolaire
  */
 @Entity
-@Table(name = "eleve")
+@Table(name = "eleve", indexes = {
+    @Index(name = "idx_eleve_nom_prenom", columnList = "nom, prenom")
+})
 @Getter
 @Setter
 @Builder

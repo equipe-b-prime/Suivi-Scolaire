@@ -20,5 +20,7 @@ public class ProfesseurResponseDto implements ResponseDto {
     private String nom;
     private String prenom;
     private String email;
+
+    private MatiereResponseDto matierePrincipale;
     private List<MatiereResponseDto> matieres;
 }

@@ -1,6 +1,5 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.suiviScolaire.suiviScolaire.entity.Periode;
@@ -12,10 +11,18 @@ import com.suiviScolaire.suiviScolaire.dto.PeriodeResponseDto;
  * Fournit la conversion entité/DTO des périodes.
  */
 @Service
-@RequiredArgsConstructor
 public class PeriodeService {
 
     private final PeriodeRepository periodeRepository;
+
+    /**
+     * Constructeur injectant le repository des périodes.
+     *
+     * @param periodeRepository le repository des périodes
+     */
+    public PeriodeService(PeriodeRepository periodeRepository) {
+        this.periodeRepository = periodeRepository;
+    }
 
     /**
      * Convertit une entité période en objet de réponse.

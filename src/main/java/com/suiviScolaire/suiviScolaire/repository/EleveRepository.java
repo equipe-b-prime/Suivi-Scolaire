@@ -36,4 +36,24 @@ public interface EleveRepository extends JpaRepository<Eleve, Long> {
      */
     @Query("SELECT i FROM Inscription i WHERE i.eleve.id = :eleveId")
     List<Inscription> findInscriptionsByEleve(@Param("eleveId") Long eleveId);
+
+    /**
+     * Recherche les eleves portant exactement ce nom.
+     * Retourne une liste car les noms ne sont pas contraints uniques.
+     *
+     * @param nom Le nom recherché.
+     * @return List<Eleve> Les eleves portant ce nom.
+     */
+    @Query("SELECT e FROM Eleve e WHERE e.nom = :nom")
+    List<Eleve> findByNom(@Param("nom") String nom);
+
+    /**
+     * Recherche des élèves dont le nom contient le texte fourni (insensible à la casse),
+     * triés par nom puis prénom.
+     *
+     * @param nom Le fragment de nom recherché.
+     * @return La liste des élèves correspondants.
+     */
+    @Query("SELECT e FROM Eleve e WHERE LOWER(e.nom) LIKE LOWER(CONCAT('%', :nom, '%')) ORDER BY e.nom, e.prenom")
+    List<Eleve> findByNomContainingIgnoreCase(@Param("nom") String nom);
 }

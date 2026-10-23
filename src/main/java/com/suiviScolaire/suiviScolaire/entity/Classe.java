@@ -6,7 +6,9 @@ import lombok.*;
  * Représente  la classe dun etudiant
  */
 @Entity
-@Table(name = "classe")
+@Table(name = "classe", indexes = {
+    @Index(name = "idx_classe_nom", columnList = "nom")
+})
 @Getter
 @Setter
 @Builder

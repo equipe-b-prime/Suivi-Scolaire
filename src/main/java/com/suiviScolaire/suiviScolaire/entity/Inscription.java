@@ -6,7 +6,11 @@ import lombok.*;
  * Represente une inscription d'un élève à une classe pour une année scolaire donnée
  */
 @Entity
-@Table(name = "inscription")
+@Table(name = "inscription", indexes = {
+    @Index(name = "idx_inscription_eleve", columnList = "eleve_id"),
+    @Index(name = "idx_inscription_classe", columnList = "classe_id"),
+    @Index(name = "idx_inscription_annee", columnList = "annee_id")
+})
 @Getter
 @Setter
 @Builder

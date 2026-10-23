@@ -1,5 +1,6 @@
 package com.suiviScolaire.suiviScolaire.dto;
 
+import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
@@ -18,5 +19,7 @@ import java.util.List;
 public class MatiereResponseDto implements ResponseDto {
     private Long id;
     private String nom;
+
+    private BigDecimal coefficient;
     private List<CoefficientResponseDto> coefficients;
 }

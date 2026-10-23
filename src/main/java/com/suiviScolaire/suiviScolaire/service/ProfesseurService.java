@@ -1,36 +1,55 @@
 package com.suiviScolaire.suiviScolaire.service;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import com.suiviScolaire.suiviScolaire.entity.Professeur;
+import com.suiviScolaire.suiviScolaire.repository.EnseignementRepository;
+import com.suiviScolaire.suiviScolaire.repository.MatiereRepository;
 import com.suiviScolaire.suiviScolaire.repository.ProfesseurRepository;
 import com.suiviScolaire.suiviScolaire.dto.MatiereResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.ProfesseurRequestDto;
 import com.suiviScolaire.suiviScolaire.dto.ProfesseurResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.RequestDto;
+import com.suiviScolaire.suiviScolaire.exception.DoublonRessourceException;
+import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
+import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
 
 /**
  * Service métier gérant les professeurs.
- * Fournit la création, la modification et les conversions entité/DTO,
+ * Fournit la création, la modification, la suppression et les conversions entité/DTO,
  * en remontant pour chaque professeur ses matières enseignées.
  */
 @Service
 public class ProfesseurService extends AbstractCrudService {
 
     private final ProfesseurRepository professeurRepository;
+    private final EnseignementRepository enseignementRepository;
+    private final MatiereRepository matiereRepository;
     private final MatiereService matiereService;
 
     /**
-     * Constructeur injectant le repository des professeurs et le service des matières.
+     * Constructeur injectant le repository des professeurs, celui des enseignements et le service des matières.
      *
      * @param professeurRepository le repository des professeurs
+     * @param enseignementRepository le repository des enseignements
+     * @param matiereRepository le repository des matières
      * @param matiereService le service des matières (conversion)
      */
-    public ProfesseurService(ProfesseurRepository professeurRepository, MatiereService matiereService) {
+    public ProfesseurService(ProfesseurRepository professeurRepository,
+                             EnseignementRepository enseignementRepository,
+                             MatiereRepository matiereRepository,
+                             MatiereService matiereService) {
         super(professeurRepository);
         this.professeurRepository = professeurRepository;
+        this.enseignementRepository = enseignementRepository;
+        this.matiereRepository = matiereRepository;
         this.matiereService = matiereService;
     }
 
@@ -45,6 +64,7 @@ public class ProfesseurService extends AbstractCrudService {
                 .nom(professeurRequest.getNom())
                 .prenom(professeurRequest.getPrenom())
                 .email(professeurRequest.getEmail())
+                .matiereId(professeurRequest.getMatiereId())
                 .build();
     }
 
@@ -60,7 +80,8 @@ public class ProfesseurService extends AbstractCrudService {
     }
 
     /**
-     * Convertit une entité professeur en objet de réponse, avec ses matières enseignées.
+     * Convertit une entité professeur en objet de réponse, avec sa matière principale
+     * et ses matières enseignées.
      *
      * @param professeur L'entité professeur à convertir.
      * @return ProfesseurResponseDto Les détails du professeur converti.
@@ -76,37 +97,127 @@ public class ProfesseurService extends AbstractCrudService {
                 .nom(professeur.getNom())
                 .prenom(professeur.getPrenom())
                 .email(professeur.getEmail())
+                .matierePrincipale(resolveMatierePrincipale(professeur))
                 .matieres(matieres)
                 .build();
     }
 
     /**
-     * Crée un nouveau professeur.
+     * Récupère une page de professeurs triés par nom.
+     *
+     * @param page l'index de la page souhaitée
+     * @param taille le nombre d'éléments par page
+     * @return une page d'objets {@link ResponseDto}
+     */
+    @Override
+    public Page<ResponseDto> getAll(int page, int taille) {
+        Pageable pageable = PageRequest.of(pageAutorisee(page), tailleAutorisee(taille), Sort.by("nom"));
+        return professeurRepository.findAll(pageable).map(this::toDto);
+    }
+
+    /**
+     * Crée un nouveau professeur après contrôle de l'unicité de l'email
+     * et de l'existence de sa matière principale.
      *
      * @param requestDto les informations du professeur à créer
      * @return le professeur créé
+     * @throws NotFoundException si la matière principale n'existe pas
+     * @throws DoublonRessourceException si un professeur porte déjà cet email
      */
     @Override
     public ResponseDto create(RequestDto requestDto) {
         ProfesseurRequestDto professeurRequest = (ProfesseurRequestDto) requestDto;
+        if (professeurRepository.existsByEmail(professeurRequest.getEmail())) {
+            throw new DoublonRessourceException("Un professeur avec l'email '"
+                    + professeurRequest.getEmail() + "' existe déjà.");
+        }
+        checkMatiereExiste(professeurRequest.getMatiereId());
         return toDto(professeurRepository.save(toEntity(professeurRequest)));
     }
 
     /**
-     * Modifie un professeur existant.
+     * Modifie un professeur existant (coordonnées et matière principale).
      *
      * @param id L'identifiant du professeur à modifier.
      * @param requestDto Les données de la requête pour modifier le professeur.
      * @return ResponseDto Les détails du professeur modifié.
+     * @throws NotFoundException si le professeur ou la matière principale n'existe pas
+     * @throws DoublonRessourceException si un autre professeur porte déjà cet email
      */
     @Override
     public ResponseDto update(Long id, RequestDto requestDto) {
         ProfesseurRequestDto professeurRequest = (ProfesseurRequestDto) requestDto;
         Professeur professeur = professeurRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Professeur non trouvé"));
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        if (professeurRepository.existsByEmailAndIdNot(professeurRequest.getEmail(), id)) {
+            throw new DoublonRessourceException("Un autre professeur avec l'email '"
+                    + professeurRequest.getEmail() + "' existe déjà.");
+        }
+        checkMatiereExiste(professeurRequest.getMatiereId());
         professeur.setNom(professeurRequest.getNom());
         professeur.setPrenom(professeurRequest.getPrenom());
         professeur.setEmail(professeurRequest.getEmail());
+        professeur.setMatiereId(professeurRequest.getMatiereId());
         return toDto(professeurRepository.save(professeur));
+    }
+
+    /**
+     * Supprime un professeur, sauf s'il est affecté à une matière.
+     *
+     * @param id L'identifiant du professeur à supprimer.
+     * @return ResponseDto Les détails du professeur supprimé.
+     * @throws NotFoundException si le professeur n'existe pas
+     * @throws RessourceUtiliseeException si le professeur est encore affecté
+     */
+    @Override
+    public ResponseDto delete(Long id) {
+        Professeur professeur = professeurRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        if (enseignementRepository.existsByProfesseurId(id)) {
+            throw new RessourceUtiliseeException("Professeur", id, "Enseignement");
+        }
+        professeurRepository.deleteById(id);
+        return toDto(professeur);
+    }
+
+    /**
+     * Vérifie qu'une matière existe.
+     *
+     * @param matiereId L'identifiant de la matière.
+     * @throws NotFoundException si la matière n'existe pas
+     */
+    private void checkMatiereExiste(Long matiereId) {
+        if (!matiereRepository.existsById(matiereId)) {
+            throw new NotFoundException("Matière principale non trouvée");
+        }
+    }
+
+    /**
+     * Résout la matière principale du professeur (résolue par jointure).
+     *
+     * @param professeur Le professeur concerné.
+     * @return La matière principale, ou null si le professeur n'en a pas.
+     */
+    private MatiereResponseDto resolveMatierePrincipale(Professeur professeur) {
+        if (professeur.getMatiereId() == null) {
+            return null;
+        }
+        return matiereRepository.findById(professeur.getMatiereId())
+                .map(matiereService::toDto)
+                .orElse(null);
+    }
+
+    /**
+     * Recherche un professeur par son nom exact (premier résultat en cas d'homonymie).
+     *
+     * @param nom Le nom du professeur recherché.
+     * @return ResponseDto Les détails du professeur trouvé.
+     * @throws NotFoundException si aucun professeur ne porte ce nom
+     */
+    public ResponseDto getByNom(String nom) {
+        Professeur professeur = professeurRepository.findByNom(nom).stream()
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        return toDto(professeur);
     }
 }

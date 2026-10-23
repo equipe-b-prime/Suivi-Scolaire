@@ -6,7 +6,10 @@ import lombok.*;
  * Represente un enseignement, qui relie un professeur à une matière
  */
 @Entity
-@Table(name = "enseignement")
+@Table(name = "enseignement", indexes = {
+    @Index(name = "idx_enseignement_professeur", columnList = "professeur_id"),
+    @Index(name = "idx_enseignement_matiere", columnList = "matiere_id")
+})
 @Getter
 @Setter
 @Builder

@@ -1,6 +1,5 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import com.suiviScolaire.suiviScolaire.entity.Enseignement;
@@ -12,12 +11,24 @@ import com.suiviScolaire.suiviScolaire.dto.EnseignementResponseDto;
  * Fournit la conversion entité/DTO des enseignements (matière, professeur).
  */
 @Service
-@RequiredArgsConstructor
 public class EnseignementService {
 
     private final EnseignementRepository enseignementRepository;
     private final MatiereService matiereService;
     private final ProfesseurService professeurService;
+
+    /**
+     * Constructeur injectant le repository des enseignements et les services des matières et des professeurs.
+     *
+     * @param enseignementRepository le repository des enseignements
+     * @param matiereService le service des matières (conversion)
+     * @param professeurService le service des professeurs (conversion)
+     */
+    public EnseignementService(EnseignementRepository enseignementRepository, MatiereService matiereService, ProfesseurService professeurService) {
+        this.enseignementRepository = enseignementRepository;
+        this.matiereService = matiereService;
+        this.professeurService = professeurService;
+    }
 
     /**
      * Convertit une entité enseignement en objet de réponse.

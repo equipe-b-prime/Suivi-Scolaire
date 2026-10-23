@@ -1,17 +1,17 @@
 package com.suiviScolaire.suiviScolaire.repository;
 
+import com.suiviScolaire.suiviScolaire.entity.Eleve;
+import com.suiviScolaire.suiviScolaire.entity.Inscription;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import com.suiviScolaire.suiviScolaire.entity.Inscription;
 
 /**
- * Repository JPA pour l'accès aux données des inscriptions.
- * Fournit les opérations CRUD standard sur la table "inscription"
- * ainsi que des requêtes personnalisées (navigation + WHERE, sans JOIN).
+ * Repository JPA de l'entité Inscription.
+ * Fournit les opérations CRUD ainsi que les requêtes de jointure sur les élèves et les classes.
  */
 @Repository
 public interface InscriptionRepository extends JpaRepository<Inscription, Long> {
@@ -20,25 +20,42 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
      * Récupère les inscriptions d'un élève.
      *
      * @param eleveId L'identifiant de l'élève.
-     * @return List<Inscription> Les inscriptions de l'élève.
+     * @return La liste des inscriptions de l'élève.
      */
     List<Inscription> findByEleveId(Long eleveId);
 
     /**
-     * Récupère la classe de chaque élève pour une liste d'élèves (batch).
+     * Récupère la classe et l'élève de plusieurs inscriptions.
      *
      * @param eleveIds Les identifiants des élèves.
-     * @return List<Object[]> Chaque entrée : [eleveId, classe].
+     * @return Une liste de paires (identifiant d'élève, classe).
      */
     @Query("SELECT i.eleve.id, i.classe FROM Inscription i WHERE i.eleve.id IN :eleveIds ORDER BY i.annee.id DESC")
     List<Object[]> findClasseByEleveIds(@Param("eleveIds") List<Long> eleveIds);
 
     /**
-     * Récupère l'élève de chaque inscription pour une liste d'inscriptions (batch).
+     * Récupère l'élève de plusieurs inscriptions.
      *
      * @param inscriptionIds Les identifiants des inscriptions.
-     * @return List<Object[]> Chaque entrée : [inscriptionId, eleve].
+     * @return Une liste de paires (identifiant d'inscription, élève).
      */
     @Query("SELECT i.id, i.eleve FROM Inscription i WHERE i.id IN :inscriptionIds")
     List<Object[]> findEleveByInscriptionIds(@Param("inscriptionIds") List<Long> inscriptionIds);
+
+    /**
+     * Vérifie si une classe compte au moins un élève inscrit.
+     *
+     * @param classeId L'identifiant de la classe.
+     * @return true si au moins un élève est inscrit dans cette classe.
+     */
+    boolean existsByClasseId(Long classeId);
+
+    /**
+     * Récupère les élèves d'une classe, triés par nom puis prénom (jointure sur l'inscription).
+     *
+     * @param classeId L'identifiant de la classe.
+     * @return La liste des élèves de la classe.
+     */
+    @Query("SELECT i.eleve FROM Inscription i WHERE i.classe.id = :classeId ORDER BY i.eleve.nom, i.eleve.prenom")
+    List<Eleve> findElevesByClasseId(@Param("classeId") Long classeId);
 }
