@@ -115,6 +115,21 @@ public class EleveController {
     }
 
     /**
+     * F11: Affecter un élève à une nouvelle classe en cours d'année.
+     *
+     * @param eleveId L'identifiant de l'élève.
+     * @param nouvelleClasseId L'identifiant de la classe de destination.
+     * @param anneeId L'identifiant de l'année scolaire (optionnel).
+     * @return ResponseDto de l'élève affecté.
+     */
+    @PostMapping("/{eleveId}/affectation")
+    public Response<ResponseDto> affecterEleveClasse(@PathVariable Long eleveId,
+                                                     @RequestParam(required = false) Long nouvelleClasseId,
+                                                     @RequestParam(required = false) Long anneeId) {
+        return new Response<>(eleveService.affecterEleveClasse(eleveId, nouvelleClasseId, anneeId));
+    }
+
+    /**
      * Supprime le eleve à partir de son identifiant.
      *
      * @param id l'identifiant du eleve

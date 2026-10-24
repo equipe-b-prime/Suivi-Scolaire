@@ -1,10 +1,5 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +14,7 @@ import com.suiviScolaire.suiviScolaire.dto.EleveRequestDto;
 import com.suiviScolaire.suiviScolaire.dto.EleveResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.RequestDto;
 import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
+import com.suiviScolaire.suiviScolaire.exception.RequeteInvalideException;
 import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
 import com.suiviScolaire.suiviScolaire.entity.Inscription;
@@ -27,17 +23,16 @@ import com.suiviScolaire.suiviScolaire.repository.NoteRepository;
 
 /**
  * Service métier gérant les élèves.
- * Fournit la création, la modification, la suppression et les conversions entité/DTO.
- * Le rattachement à une classe passe par la table "inscription"
- * (sans relation directe entre Eleve et Classe).
+ * Fournit la création, la modification, la suppression, les affectations de classe
+ * et les conversions entité/DTO.
  */
 @Service
 public class EleveService extends AbstractCrudService {
 
     private final EleveRepository eleveRepository;
-    private final InscriptionRepository inscriptionRepository;
     private final ClasseRepository classeRepository;
     private final AnneeRepository anneeRepository;
+    private final InscriptionRepository inscriptionRepository;
     private final NoteRepository noteRepository;
     private final ClasseService classeService;
 
@@ -45,43 +40,29 @@ public class EleveService extends AbstractCrudService {
      * Constructeur injectant les repositories et le service des classes.
      *
      * @param eleveRepository le repository des élèves
-     * @param inscriptionRepository le repository des inscriptions
      * @param classeRepository le repository des classes
      * @param anneeRepository le repository des années scolaires
+     * @param inscriptionRepository le repository des inscriptions
      * @param noteRepository le repository des notes
      * @param classeService le service des classes (conversion)
      */
     public EleveService(EleveRepository eleveRepository,
-                        InscriptionRepository inscriptionRepository,
                         ClasseRepository classeRepository,
                         AnneeRepository anneeRepository,
+                        InscriptionRepository inscriptionRepository,
                         NoteRepository noteRepository,
                         ClasseService classeService) {
         super(eleveRepository);
         this.eleveRepository = eleveRepository;
-        this.inscriptionRepository = inscriptionRepository;
         this.classeRepository = classeRepository;
         this.anneeRepository = anneeRepository;
+        this.inscriptionRepository = inscriptionRepository;
         this.noteRepository = noteRepository;
         this.classeService = classeService;
     }
 
     /**
-     * Convertit les données d'une requête en entité élève.
-     *
-     * @param eleveRequest Les données de la requête pour créer l'élève.
-     * @return Eleve L'entité élève créée.
-     */
-    public Eleve toEntity(EleveRequestDto eleveRequest) {
-        return Eleve.builder()
-                .nom(eleveRequest.getNom())
-                .prenom(eleveRequest.getPrenom())
-                .dateNaissance(eleveRequest.getDateNaissance())
-                .build();
-    }
-
-    /**
-     * Convertit une entité élève en objet de réponse, avec sa classe.
+     * Convertit une entité élève en objet de réponse.
      *
      * @param entity L'entité élève à convertir.
      * @return ResponseDto Les détails de l'élève converti.
@@ -92,181 +73,46 @@ public class EleveService extends AbstractCrudService {
     }
 
     /**
-     * Convertit une entité élève en objet de réponse, avec sa classe.
+     * Convertit une entité élève en objet de réponse, avec sa classe
+     * (la plus récente de ses inscriptions).
      *
      * @param eleve L'entité élève à convertir.
      * @return EleveResponseDto Les détails de l'élève converti.
      */
     public EleveResponseDto toDto(Eleve eleve) {
-        Classe classe = eleveRepository.findClassesByEleve(eleve.getId())
-                .stream().findFirst().orElse(null);
-        return EleveResponseDto.builder()
-                .id(eleve.getId())
-                .nom(eleve.getNom())
-                .prenom(eleve.getPrenom())
-                .dateNaissance(eleve.getDateNaissance())
-                .classe(classe == null ? null : classeService.toDto(classe))
-                .build();
-    }
-
-    /**
-     * Récupère une page d'élèves triés par nom puis par prénom.
-     *
-     * @param page l'index de la page souhaitée
-     * @param taille le nombre d'éléments par page
-     * @return une page d'objets {@link ResponseDto}
-     */
-    @Override
-    public Page<ResponseDto> getAll(int page, int taille) {
-        Pageable pageable = PageRequest.of(pageAutorisee(page), tailleAutorisee(taille),
-                Sort.by("nom", "prenom"));
-        return eleveRepository.findAll(pageable).map(this::toDto);
-    }
-
-    /**
-     * Inscrit un nouvel élève et le rattache à une classe.
-     *
-     * @param requestDto les informations de l'élève à créer
-     * @return l'élève créé
-     * @throws NotFoundException si la classe n'existe pas
-     * @throws IllegalArgumentException si la classe est déjà pleine
-     */
-    @Override
-    public ResponseDto create(RequestDto requestDto) {
-        EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
-        Classe classe = classeRepository.findById(eleveRequest.getClasseId())
-                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
-        checkClasseDisponible(classe);
-        Eleve eleve = eleveRepository.save(toEntity(eleveRequest));
-        Annee annee = resolveAnnee(eleveRequest.getAnneeId());
-        inscriptionRepository.save(Inscription.builder()
-                .eleve(eleve)
-                .classe(classe)
-                .annee(annee)
-                .build());
-        return toDto(eleve);
-    }
-
-    /**
-     * Modifie un élève existant. La date de naissance reste figée ; la classe peut changer
-     * si la classe de destination n'est pas pleine.
-     *
-     * @param id L'identifiant de l'élève à modifier.
-     * @param requestDto Les données de la requête pour modifier l'élève.
-     * @return ResponseDto Les détails de l'élève modifié.
-     * @throws NotFoundException si l'élève ou la classe n'existe pas
-     * @throws IllegalArgumentException si la classe de destination est pleine
-     */
-    @Override
-    public ResponseDto update(Long id, RequestDto requestDto) {
-        EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
-        Eleve eleve = eleveRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
-        eleve.setNom(eleveRequest.getNom());
-        eleve.setPrenom(eleveRequest.getPrenom());
-        eleveRepository.save(eleve);
-        if (eleveRequest.getClasseId() != null) {
-            changeClasse(eleve, eleveRequest.getClasseId(), eleveRequest.getAnneeId());
+        EleveResponseDto dto = new EleveResponseDto();
+        dto.setId(eleve.getId());
+        dto.setNom(eleve.getNom());
+        dto.setPrenom(eleve.getPrenom());
+        dto.setDateNaissance(eleve.getDateNaissance());
+        Classe classeActuelle = classeActuelle(eleve);
+        if (classeActuelle != null) {
+            dto.setClasse(classeService.toDto(classeActuelle));
         }
-        return toDto(eleve);
+        return dto;
     }
 
     /**
-     * Supprime un élève, sauf s'il possède des notes.
-     *
-     * @param id L'identifiant de l'élève à supprimer.
-     * @return ResponseDto Les détails de l'élève supprimé.
-     * @throws NotFoundException si l'élève n'existe pas
-     * @throws RessourceUtiliseeException si l'élève possède des notes
-     */
-    @Override
-    public ResponseDto delete(Long id) {
-        Eleve eleve = eleveRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
-        if (noteRepository.countNotesByEleve(id) > 0) {
-            throw new RessourceUtiliseeException("Eleve", id, "Note");
-        }
-        ResponseDto response = toDto(eleve);
-        inscriptionRepository.deleteAll(inscriptionRepository.findByEleveId(id));
-        eleveRepository.deleteById(id);
-        return response;
-    }
-
-    /**
-     * Change la classe d'un élève (met à jour son inscription, ou en crée une).
-     *
-     * @param eleve L'élève concerné.
-     * @param classeId L'identifiant de la nouvelle classe.
-     * @param anneeId L'identifiant de l'année (optionnel).
-     * @throws NotFoundException si la classe n'existe pas
-     * @throws IllegalArgumentException si la classe de destination est pleine
-     */
-    private void changeClasse(Eleve eleve, Long classeId, Long anneeId) {
-        Classe classe = classeRepository.findById(classeId)
-                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
-        checkClasseDisponible(classe);
-        List<Inscription> inscriptions = inscriptionRepository.findByEleveId(eleve.getId());
-        if (inscriptions.isEmpty()) {
-            Annee annee = resolveAnnee(anneeId);
-            inscriptionRepository.save(Inscription.builder()
-                    .eleve(eleve)
-                    .classe(classe)
-                    .annee(annee)
-                    .build());
-        } else {
-            Inscription inscription = inscriptions.get(0);
-            inscription.setClasse(classe);
-            inscriptionRepository.save(inscription);
-        }
-    }
-
-    /**
-     * Vérifie qu'une classe accepte encore un élève.
-     *
-     * @param classe La classe à contrôler.
-     * @throws IllegalArgumentException si la classe a atteint son effectif maximum
-     */
-    private void checkClasseDisponible(Classe classe) {
-        long effectifReel = classeRepository.countElevesByClasse(classe.getId());
-        if (effectifReel >= classe.getEffectifMax()) {
-            throw new IllegalArgumentException("La classe '" + classe.getNom()
-                    + "' est pleine (" + effectifReel + "/" + classe.getEffectifMax() + ").");
-        }
-    }
-
-    /**
-     * Résout l'année scolaire à utiliser : celle fournie, sinon la plus récente.
-     *
-     * @param anneeId L'identifiant de l'année (peut être null).
-     * @return Annee L'année résolue.
-     */
-    private Annee resolveAnnee(Long anneeId) {
-        if (anneeId != null) {
-            return anneeRepository.findById(anneeId)
-                    .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
-        }
-        return anneeRepository.findTopByOrderByIdDesc()
-                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
-    }
-
-    /**
-     * Récupère l'effectif d'une classe : la classe, ses effectifs et ses élèves triés par nom puis prénom.
+     * Récupère les élèves d'une classe, triés par nom puis prénom,
+     * avec les effectifs de la classe.
      *
      * @param classeId L'identifiant de la classe.
-     * @return La réponse contenant l'effectif de la classe.
+     * @return ClasseElevesResponseDto La classe, ses effectifs et ses élèves.
      * @throws NotFoundException si la classe n'existe pas
      */
     public ClasseElevesResponseDto getElevesByClasse(Long classeId) {
         Classe classe = classeRepository.findById(classeId)
-                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
-        List<Eleve> eleves = inscriptionRepository.findElevesByClasseId(classeId);
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        List<EleveResponseDto> eleves = inscriptionRepository.findElevesByClasseId(classeId).stream()
+                .map(this::toDto)
+                .toList();
         return ClasseElevesResponseDto.builder()
                 .classeId(classe.getId())
                 .nom(classe.getNom())
                 .niveau(classe.getNiveau())
                 .effectifMax(classe.getEffectifMax())
                 .effectifReel(classeRepository.countElevesByClasse(classeId))
-                .eleves(eleves.stream().map(this::toDto).toList())
+                .eleves(eleves)
                 .build();
     }
 
@@ -294,5 +140,177 @@ public class EleveService extends AbstractCrudService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
         return toDto(eleve);
+    }
+
+    /**
+     * Crée un nouvel élève et, si une classe est fournie, son inscription
+     * pour l'année scolaire indiquée (ou l'année la plus récente par défaut).
+     *
+     * @param requestDto les informations de l'élève à créer
+     * @return l'élève créé
+     * @throws NotFoundException si la classe ou l'année scolaire n'existe pas
+     */
+    @Override
+    public ResponseDto create(RequestDto requestDto) {
+        EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
+        Eleve eleve = Eleve.builder()
+                .nom(eleveRequest.getNom())
+                .prenom(eleveRequest.getPrenom())
+                .dateNaissance(eleveRequest.getDateNaissance())
+                .build();
+        eleve = eleveRepository.save(eleve);
+        if (eleveRequest.getClasseId() != null) {
+            changeClasse(eleve, eleveRequest.getClasseId(), eleveRequest.getAnneeId());
+        }
+        return toDto(eleve);
+    }
+
+    /**
+     * Modifie un élève existant. La date de naissance reste figée ; la classe peut changer
+     * si la classe de destination respecte le niveau et n'est pas pleine.
+     *
+     * @param id L'identifiant de l'élève à modifier.
+     * @param requestDto Les données de la requête pour modifier l'élève.
+     * @return ResponseDto Les détails de l'élève modifié.
+     * @throws NotFoundException si l'élève ou la classe n'existe pas
+     * @throws RequeteInvalideException si la classe de destination n'est pas du même niveau
+     * @throws IllegalArgumentException si la classe de destination est pleine
+     */
+    @Override
+    public ResponseDto update(Long id, RequestDto requestDto) {
+        EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
+        Eleve eleve = eleveRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        eleve.setNom(eleveRequest.getNom());
+        eleve.setPrenom(eleveRequest.getPrenom());
+        eleveRepository.save(eleve);
+        if (eleveRequest.getClasseId() != null) {
+            Classe classeCible = classeRepository.findById(eleveRequest.getClasseId())
+                    .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+            verifierAffectationAutorisee(eleve, classeCible);
+            changeClasse(eleve, eleveRequest.getClasseId(), eleveRequest.getAnneeId());
+        }
+        return toDto(eleve);
+    }
+
+    /**
+     * F11: Affecte un élève à une nouvelle classe en cours d'année.
+     * L'élève ne peut changer que pour une classe de même niveau et non pleine.
+     * L'inscription existante est mise à jour : l'élève conserve ses notes.
+     *
+     * @param eleveId L'identifiant de l'élève.
+     * @param nouvelleClasseId L'identifiant de la classe de destination.
+     * @param anneeId L'identifiant de l'année scolaire (optionnel : année la plus récente par défaut).
+     * @return ResponseDto de l'élève affecté.
+     * @throws NotFoundException si l'élève ou la classe de destination n'existe pas
+     * @throws RequeteInvalideException si la classe de destination n'est pas du même niveau (400)
+     * @throws IllegalArgumentException si la classe de destination est pleine (409)
+     */
+    public ResponseDto affecterEleveClasse(Long eleveId, Long nouvelleClasseId, Long anneeId) {
+        Eleve eleve = eleveRepository.findById(eleveId)
+                .orElseThrow(() -> new NotFoundException("Élève non trouvé"));
+        if (nouvelleClasseId == null) {
+            throw new RequeteInvalideException("La classe de destination est obligatoire.");
+        }
+        Classe nouvelleClasse = classeRepository.findById(nouvelleClasseId)
+                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+        verifierAffectationAutorisee(eleve, nouvelleClasse);
+        changeClasse(eleve, nouvelleClasseId, anneeId);
+        return toDto(eleve);
+    }
+
+    /**
+     * Supprime un élève et ses inscriptions, sauf s'il possède des notes.
+     *
+     * @param id L'identifiant de l'élève à supprimer.
+     * @return ResponseDto Les détails de l'élève supprimé.
+     * @throws NotFoundException si l'élève n'existe pas
+     * @throws RessourceUtiliseeException si l'élève possède des notes
+     */
+    @Override
+    public ResponseDto delete(Long id) {
+        Eleve eleve = eleveRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        if (noteRepository.countNotesByEleve(eleve.getId()) > 0) {
+            throw new RessourceUtiliseeException("Élève", id, "Note");
+        }
+        inscriptionRepository.deleteAll(inscriptionRepository.findByEleveId(eleve.getId()));
+        eleveRepository.delete(eleve);
+        return toDto(eleve);
+    }
+
+    /**
+     * Vérifie que l'élève peut être affecté à la classe cible :
+     * même niveau que sa classe actuelle (si elle existe) et classe non pleine.
+     *
+     * @param eleve L'élève concerné.
+     * @param classeCible La classe de destination.
+     * @throws RequeteInvalideException si la classe de destination n'est pas du même niveau
+     * @throws IllegalArgumentException si la classe de destination est pleine
+     */
+    private void verifierAffectationAutorisee(Eleve eleve, Classe classeCible) {
+        Classe classeActuelle = classeActuelle(eleve);
+        if (classeActuelle != null && !classeActuelle.getNiveau().equals(classeCible.getNiveau())) {
+            throw new RequeteInvalideException("Niveau différent : l'élève est au niveau "
+                    + classeActuelle.getNiveau() + ", la classe cible est au niveau " + classeCible.getNiveau());
+        }
+        long effectifReel = classeRepository.countElevesByClasse(classeCible.getId());
+        if (effectifReel >= classeCible.getEffectifMax()) {
+            throw new IllegalArgumentException("La classe '" + classeCible.getNom()
+                    + "' est pleine (" + effectifReel + "/" + classeCible.getEffectifMax() + ")");
+        }
+    }
+
+    /**
+     * Change la classe de l'élève en conservant son inscription existante et ses notes.
+     *
+     * @param eleve L'élève dont on change la classe.
+     * @param nouvelleClasseId L'identifiant de la nouvelle classe.
+     * @param anneeId L'identifiant de l'année scolaire (optionnel).
+     * @throws NotFoundException si la classe ou l'année scolaire n'existe pas
+     */
+    private void changeClasse(Eleve eleve, Long nouvelleClasseId, Long anneeId) {
+        Classe classe = classeRepository.findById(nouvelleClasseId)
+                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+        List<Inscription> inscriptions = inscriptionRepository.findByEleveId(eleve.getId());
+        if (inscriptions.isEmpty()) {
+            inscriptionRepository.save(Inscription.builder()
+                    .eleve(eleve)
+                    .classe(classe)
+                    .annee(resoudreAnnee(anneeId))
+                    .build());
+        } else {
+            Inscription inscription = inscriptions.get(0);
+            inscription.setClasse(classe);
+            inscriptionRepository.save(inscription);
+        }
+    }
+
+    /**
+     * Résout l'année scolaire à utiliser : celle fournie, sinon la plus récente.
+     *
+     * @param anneeId L'identifiant de l'année scolaire (peut être null).
+     * @return Annee L'année scolaire résolue.
+     * @throws NotFoundException si l'année demandée n'existe pas ou si aucune année n'est en base
+     */
+    private Annee resoudreAnnee(Long anneeId) {
+        if (anneeId != null) {
+            return anneeRepository.findById(anneeId)
+                    .orElseThrow(() -> new NotFoundException("Année scolaire non trouvée"));
+        }
+        return anneeRepository.findTopByOrderByIdDesc()
+                .orElseThrow(() -> new NotFoundException("Aucune année scolaire en base"));
+    }
+
+    /**
+     * Récupère la classe actuelle de l'élève (inscription de l'année la plus récente).
+     *
+     * @param eleve L'élève concerné.
+     * @return Classe La classe actuelle, ou null si l'élève n'est inscrit nulle part.
+     */
+    private Classe classeActuelle(Eleve eleve) {
+        return eleveRepository.findClassesByEleve(eleve.getId()).stream()
+                .findFirst()
+                .orElse(null);
     }
 }
