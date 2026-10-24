@@ -50,4 +50,13 @@ public interface ProfesseurRepository extends JpaRepository<Professeur, Long> {
      * @return true si un autre professeur porte déjà cet email.
      */
     boolean existsByEmailAndIdNot(String email, Long id);
+
+    /**
+     * Vérifie si un professeur est déjà affecté à une classe pour une matière.
+     *
+     * @param matiereId Identifiant de la matière.
+     * @param classeId Identifiant de la classe.
+     * @return true si un professeur est déjà affecté.
+     */
+    boolean existsByMatiereIdAndClasseId(Long matiereId, Long classeId);
 }

@@ -16,6 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.suiviScolaire.suiviScolaire.exception.MotifRouvreInvalideException;
+import com.suiviScolaire.suiviScolaire.exception.PoidsInvalideException;
+import com.suiviScolaire.suiviScolaire.exception.TrimestreClotureException;
+
 /**
  * Gestionnaire global des exceptions de l'application.
  * Centralise le format des réponses d'erreur (validation, ressource introuvable, conflit métier).
@@ -129,6 +133,36 @@ public class GlobalException {
         reponse.setHasError(true);
         reponse.setStatus(new Status(HttpStatus.CONFLICT.value(), "Ressource utilisée"));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
+    }
+
+    /**
+     * Gère les erreurs de motif de réouverture invalide (obligatoire, minimum 20 caractères).
+     *
+     * @param ex L'exception de motif invalide.
+     * @return ResponseEntity<Response<String>> Le message d'erreur encapsulé.
+     */
+    @ExceptionHandler(MotifRouvreInvalideException.class)
+    public ResponseEntity<Response<String>> handleMotifRouvreInvalide(MotifRouvreInvalideException ex) {
+        Response<String> reponse = new Response<>(ex.getMessage());
+        reponse.setNombre(1L);
+        reponse.setHasError(true);
+        reponse.setStatus(new Status(HttpStatus.BAD_REQUEST.value(), "Motif de réouverture invalide"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reponse);
+    }
+
+    /**
+     * Gère les erreurs de poids invalide (doit être strictement positif).
+     *
+     * @param ex L'exception de poids invalide.
+     * @return ResponseEntity<Response<String>> Le message d'erreur encapsulé.
+     */
+    @ExceptionHandler(PoidsInvalideException.class)
+    public ResponseEntity<Response<String>> handlePoidsInvalide(PoidsInvalideException ex) {
+        Response<String> reponse = new Response<>(ex.getMessage());
+        reponse.setNombre(1L);
+        reponse.setHasError(true);
+        reponse.setStatus(new Status(HttpStatus.BAD_REQUEST.value(), "Poids invalide"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reponse);
     }
 
     /**

@@ -1,14 +1,15 @@
 package com.suiviScolaire.suiviScolaire.service;
 
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.suiviScolaire.suiviScolaire.entity.Classe;
+import com.suiviScolaire.suiviScolaire.entity.Matiere;
 import com.suiviScolaire.suiviScolaire.entity.Professeur;
+import com.suiviScolaire.suiviScolaire.repository.ClasseRepository;
 import com.suiviScolaire.suiviScolaire.repository.EnseignementRepository;
 import com.suiviScolaire.suiviScolaire.repository.MatiereRepository;
 import com.suiviScolaire.suiviScolaire.repository.ProfesseurRepository;
@@ -20,6 +21,7 @@ import com.suiviScolaire.suiviScolaire.exception.DoublonRessourceException;
 import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
 import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
+import java.util.List;
 
 /**
  * Service métier gérant les professeurs.
@@ -32,6 +34,7 @@ public class ProfesseurService extends AbstractCrudService {
     private final ProfesseurRepository professeurRepository;
     private final EnseignementRepository enseignementRepository;
     private final MatiereRepository matiereRepository;
+    private final ClasseRepository classeRepository;
     private final MatiereService matiereService;
 
     /**
@@ -42,16 +45,18 @@ public class ProfesseurService extends AbstractCrudService {
      * @param matiereRepository le repository des matières
      * @param matiereService le service des matières (conversion)
      */
-    public ProfesseurService(ProfesseurRepository professeurRepository,
-                             EnseignementRepository enseignementRepository,
-                             MatiereRepository matiereRepository,
-                             MatiereService matiereService) {
-        super(professeurRepository);
-        this.professeurRepository = professeurRepository;
-        this.enseignementRepository = enseignementRepository;
-        this.matiereRepository = matiereRepository;
-        this.matiereService = matiereService;
-    }
+public ProfesseurService(ProfesseurRepository professeurRepository,
+                         EnseignementRepository enseignementRepository,
+                         MatiereRepository matiereRepository,
+                         ClasseRepository classeRepository,
+                         MatiereService matiereService) {
+    super(professeurRepository);
+    this.professeurRepository = professeurRepository;
+    this.enseignementRepository = enseignementRepository;
+    this.matiereRepository = matiereRepository;
+    this.classeRepository = classeRepository;
+    this.matiereService = matiereService;
+}
 
     /**
      * Convertit les données d'une requête en entité professeur.
@@ -205,6 +210,39 @@ public class ProfesseurService extends AbstractCrudService {
         return matiereRepository.findById(professeur.getMatiereId())
                 .map(matiereService::toDto)
                 .orElse(null);
+    }
+
+    /**
+     * Affecte une matière à un professeur dans une classe.
+     * Règle : une matière ne peut avoir qu'un seul professeur par classe.
+     *
+     * @param professeurId L'identifiant du professeur.
+     * @param matiereId L'identifiant de la matière à affecter.
+     * @param classeId L'identifiant de la classe.
+     * @return ResponseDto du professeur affecté.
+     * @throws NotFoundException si le professeur, la matière ou la classe n'existe pas
+     * @throws DoublonRessourceException si un autre professeur est déjà affecté à cette matière dans cette classe (409)
+     */
+    public ResponseDto affecterMatiereAProfesseurDansClasse(Long professeurId, Long matiereId, Long classeId) {
+        Professeur professeur = professeurRepository.findById(professeurId)
+                .orElseThrow(() -> new NotFoundException("Professeur non trouvé"));
+        Matiere matiere = matiereRepository.findById(matiereId)
+                .orElseThrow(() -> new NotFoundException("Matière non trouvée"));
+        Classe classe = classeRepository.findById(classeId)
+                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+
+        // Vérifier la règle : une matière ne peut avoir qu'un seul professeur par classe
+        if (professeur.getId() != null && professeurRepository.existsByMatiereIdAndClasseId(matiereId, classeId)) {
+            // Vérifier que ce n'est pas le même professeur qui est déjà affecté
+            if (!professeur.getMatiereId().equals(matiereId)) {
+                throw new DoublonRessourceException("Un professeur est déjà affecté à la matière '" + matiere.getNom()
+                        + "' dans la classe '" + classe.getNom() + "'.");
+            }
+        }
+
+        professeur.setMatiereId(matiereId);
+        professeur.setClasseId(classeId);
+        return toDto(professeurRepository.save(professeur));
     }
 
     /**

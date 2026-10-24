@@ -77,4 +77,17 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findNotesByClasseAndMatiereAndTrimestre(@Param("classeId") Long classeId,
                                                        @Param("matiereId") Long matiereId,
                                                        @Param("trimestre") Integer trimestre);
+
+    /**
+     * Compte le nombre de notes d'une classe dans une matière pour un trimestre donné.
+     *
+     * @param classeId L'identifiant de la classe.
+     * @param matiereId L'identifiant de la matière.
+     * @param trimestre Le numéro du trimestre (1, 2 ou 3).
+     * @return Le nombre de notes.
+     */
+    @Query("SELECT COUNT(n) FROM Note n WHERE n.inscription.classe.id = :classeId AND n.enseignement.matiere.id = :matiereId AND n.periode.numero = :trimestre")
+    long countNotesByClasseAndMatiereAndTrimestre(@Param("classeId") Long classeId,
+                                                   @Param("matiereId") Long matiereId,
+                                                   @Param("trimestre") Integer trimestre);
 }

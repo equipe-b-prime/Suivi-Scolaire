@@ -2,6 +2,8 @@ package com.suiviScolaire.suiviScolaire.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
+
 /**
  * Represente une inscription d'un élève à une classe pour une année scolaire donnée
  */
@@ -29,4 +31,8 @@ public class Inscription {
     @ManyToOne
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
+    @Column(name = "date_debut")
+    private LocalDate dateDebut;
+    @Column(name = "date_fin")
+    private LocalDate dateFin;
 }

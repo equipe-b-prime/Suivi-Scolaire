@@ -20,6 +20,9 @@ public class TypeEvaluation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 20, unique = true)
+    private String code;
+
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal poid;
 

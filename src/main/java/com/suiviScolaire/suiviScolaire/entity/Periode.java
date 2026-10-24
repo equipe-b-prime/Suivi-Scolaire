@@ -3,6 +3,7 @@ package com.suiviScolaire.suiviScolaire.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 /**
  * Represente une periode scolaire (ex: Trimestre, Semestre, etc.)
  */
@@ -34,4 +35,22 @@ public class Periode {
      */
     @Column(name = "numero", nullable = false)
     private Integer numero;
+
+    /**
+     * Date de réouverture de la période (null si non clôturée ou déjà rouverte).
+     */
+    @Column(name = "date_rouverte")
+    private LocalDate dateRouvre;
+
+    /**
+     * Motif de la réouverture (obligatoire, minimum 20 caractères).
+     */
+    @Column(name = "motif_rouverte")
+    private String motifRouvre;
+
+    /**
+     * Identifiant de l'utilisateur qui a procédé à la réouverture.
+     */
+    @Column(name = "utilisateur_rouverte")
+    private String utilisateurRouvre;
 }

@@ -10,4 +10,6 @@ import com.suiviScolaire.suiviScolaire.entity.TypeEvaluation;
  */
 @Repository
 public interface TypeEvaluationRepository extends JpaRepository<TypeEvaluation, Long> {
+
+    TypeEvaluation findByCode(String code);
 }

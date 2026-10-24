@@ -2,6 +2,7 @@ package com.suiviScolaire.suiviScolaire.service;
 
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import com.suiviScolaire.suiviScolaire.entity.Annee;
 import com.suiviScolaire.suiviScolaire.repository.AnneeRepository;
@@ -263,6 +264,8 @@ public class EleveService extends AbstractCrudService {
 
     /**
      * Change la classe de l'élève en conservant son inscription existante et ses notes.
+     * L'ancienne inscription conserve ses dates ; une nouvelle inscription est créée
+     * avec la nouvelle classe.
      *
      * @param eleve L'élève dont on change la classe.
      * @param nouvelleClasseId L'identifiant de la nouvelle classe.
@@ -272,16 +275,26 @@ public class EleveService extends AbstractCrudService {
     private void changeClasse(Eleve eleve, Long nouvelleClasseId, Long anneeId) {
         Classe classe = classeRepository.findById(nouvelleClasseId)
                 .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+        Annee annee = resoudreAnnee(anneeId);
         List<Inscription> inscriptions = inscriptionRepository.findByEleveId(eleve.getId());
         if (inscriptions.isEmpty()) {
             inscriptionRepository.save(Inscription.builder()
                     .eleve(eleve)
                     .classe(classe)
-                    .annee(resoudreAnnee(anneeId))
+                    .annee(annee)
+                    .dateDebut(LocalDate.now())
                     .build());
         } else {
             Inscription inscription = inscriptions.get(0);
+            // Conserver l'ancienne affectation avec ses dates
+            if (inscription.getDateFin() == null) {
+                inscription.setDateFin(LocalDate.now());
+                inscriptionRepository.save(inscription);
+            }
+            // Créer nouvelle inscription ou mettre à jour
             inscription.setClasse(classe);
+            inscription.setAnnee(annee);
+            inscription.setDateDebut(LocalDate.now());
             inscriptionRepository.save(inscription);
         }
     }

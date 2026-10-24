@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TypeEvaluationResponseDto {
+public class TypeEvaluationResponseDto implements ResponseDto {
     private Long id;
     private BigDecimal poid;
     private String nom;

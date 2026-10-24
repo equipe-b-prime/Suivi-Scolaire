@@ -2,6 +2,7 @@ package com.suiviScolaire.suiviScolaire.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 /**
  * Represente un professeur de l'ecole
  */
@@ -30,9 +31,15 @@ public class Professeur {
     private String email;
 
     /**
-     * Identifiant de la matière principale du professeur.
-     * Stocké comme attribut simple (sans relation JPA) : la matière est résolue par jointure.
+     * Matiere principale du professeur (attribut simple).
      */
     @Column(name = "matiere_id")
     private Long matiereId;
+
+    /**
+     * Classe à laquelle le professeur est affecté pour enseigner sa matière.
+     * Une matière ne peut avoir qu'un seul professeur par classe.
+     */
+    @Column(name = "classe_id")
+    private Long classeId;
 }

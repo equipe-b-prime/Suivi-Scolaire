@@ -2,6 +2,7 @@ package com.suiviScolaire.suiviScolaire.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 /**
  * Represente un élève dans le système de suivi scolaire
@@ -28,4 +29,16 @@ public class Eleve {
 
     @Column(nullable = false)
     private LocalDate dateNaissance;
+
+    @Column(name = "moyenne_trimestre_courant", precision = 5, scale = 2)
+    private BigDecimal moyenneTrimestreCourant;
+
+    @Column(name = "ecart_trimestre_precedent", precision = 5, scale = 2)
+    private BigDecimal ecartTrimestrePrec;
+
+    @Column(name = "est_sigle")
+    private boolean estSigle;
+
+    @Column(name = "trimestre_sigle")
+    private Integer trimestreSigle;
 }
