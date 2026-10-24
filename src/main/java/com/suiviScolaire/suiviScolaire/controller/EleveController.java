@@ -3,6 +3,8 @@ package com.suiviScolaire.suiviScolaire.controller;
 import com.suiviScolaire.suiviScolaire.dto.EleveRequestDto;
 import com.suiviScolaire.suiviScolaire.dto.NotesParMatiereResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
+import com.suiviScolaire.suiviScolaire.dto.MoyenneGeneraleResponseDto;
+import com.suiviScolaire.suiviScolaire.dto.MoyennesParMatiereResponseDto;
 import com.suiviScolaire.suiviScolaire.service.EleveService;
 import com.suiviScolaire.suiviScolaire.exception.RequeteInvalideException;
 import com.suiviScolaire.suiviScolaire.service.NoteService;
@@ -139,5 +141,25 @@ public class EleveController {
     @DeleteMapping("/{id}")
     public Response<ResponseDto> delete(@PathVariable Long id) throws Throwable {
         return new Response<>(eleveService.delete(id));
+    }
+
+    @GetMapping("/{id}/moyennes")
+    public Response<MoyennesParMatiereResponseDto> getMoyennesParMatiere(
+            @PathVariable Long id,
+            @RequestParam Integer trimestre) {
+        if (trimestre < 1 || trimestre > 3) {
+            throw new RequeteInvalideException("Le trimestre doit être 1, 2 ou 3.");
+        }
+        return new Response<>(noteService.getMoyennesParMatiere(id, trimestre));
+    }
+
+    @GetMapping("/{id}/moyenne-generale")
+    public Response<MoyenneGeneraleResponseDto> getMoyenneGenerale(
+            @PathVariable Long id,
+            @RequestParam Integer trimestre) {
+        if (trimestre < 1 || trimestre > 3) {
+            throw new RequeteInvalideException("Le trimestre doit être 1, 2 ou 3.");
+        }
+        return new Response<>(noteService.getMoyenneGenerale(id, trimestre));
     }
 }

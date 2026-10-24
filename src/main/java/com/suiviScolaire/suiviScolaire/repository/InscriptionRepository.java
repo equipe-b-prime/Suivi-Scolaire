@@ -58,4 +58,13 @@ public interface InscriptionRepository extends JpaRepository<Inscription, Long> 
      */
     @Query("SELECT i.eleve FROM Inscription i WHERE i.classe.id = :classeId ORDER BY i.eleve.nom, i.eleve.prenom")
     List<Eleve> findElevesByClasseId(@Param("classeId") Long classeId);
+
+    /**
+     * Récupère les inscriptions d'une classe.
+     *
+     * @param classeId L'identifiant de la classe.
+     * @return La liste des inscriptions de la classe, triées par nom puis prénom.
+     */
+    @Query("SELECT i FROM Inscription i WHERE i.classe.id = :classeId ORDER BY i.eleve.nom, i.eleve.prenom")
+    List<Inscription> findByClasseId(@Param("classeId") Long classeId);
 }

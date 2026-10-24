@@ -3,6 +3,7 @@ package com.suiviScolaire.suiviScolaire.controller;
 import com.suiviScolaire.suiviScolaire.dto.ClasseElevesResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.ClasseNotesResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.ClasseRequestDto;
+import com.suiviScolaire.suiviScolaire.dto.ClassementResponseDto;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
 import com.suiviScolaire.suiviScolaire.exception.RequeteInvalideException;
 import com.suiviScolaire.suiviScolaire.service.ClasseService;
@@ -134,5 +135,15 @@ public class ClasseController {
     @DeleteMapping("/{id}")
     public Response<ResponseDto> delete(@PathVariable Long id) throws Throwable {
         return new Response<>(classeService.delete(id));
+    }
+
+    @GetMapping("/{id}/classement")
+    public Response<ClassementResponseDto> getClassement(
+            @PathVariable Long id,
+            @RequestParam Integer trimestre) {
+        if (trimestre < 1 || trimestre > 3) {
+            throw new RequeteInvalideException("Le trimestre doit être 1, 2 ou 3.");
+        }
+        return new Response<>(noteService.getClassementClasse(id, trimestre));
     }
 }

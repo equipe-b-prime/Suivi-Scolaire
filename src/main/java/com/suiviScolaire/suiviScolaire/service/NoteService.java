@@ -11,6 +11,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.suiviScolaire.suiviScolaire.entity.Enseignement;
 import com.suiviScolaire.suiviScolaire.repository.EnseignementRepository;
@@ -38,6 +42,13 @@ import com.suiviScolaire.suiviScolaire.entity.Periode;
 import com.suiviScolaire.suiviScolaire.repository.PeriodeRepository;
 import com.suiviScolaire.suiviScolaire.entity.TypeEvaluation;
 import com.suiviScolaire.suiviScolaire.repository.TypeEvaluationRepository;
+
+import com.suiviScolaire.suiviScolaire.dto.ClassementEleveDto;
+import com.suiviScolaire.suiviScolaire.dto.ClassementResponseDto;
+import com.suiviScolaire.suiviScolaire.dto.DetailCoefficientDto;
+import com.suiviScolaire.suiviScolaire.dto.MoyenneGeneraleResponseDto;
+import com.suiviScolaire.suiviScolaire.dto.MoyenneMatiereDto;
+import com.suiviScolaire.suiviScolaire.dto.MoyennesParMatiereResponseDto;
 
 /**
  * Service métier gérant les notes.
@@ -393,4 +404,208 @@ public class NoteService extends AbstractCrudService {
         }
         return Sort.by(direction, propriete);
     }
+
+    private BigDecimal arrondir(BigDecimal valeur) {
+        if (valeur == null) {
+            return null;
+        }
+        return valeur.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void validerTrimestre(Integer trimestre) {
+        if (trimestre == null || trimestre < 1 || trimestre > 3) {
+            throw new RequeteInvalideException("Le trimestre doit être 1, 2 ou 3.");
+        }
+    }
+
+    public MoyennesParMatiereResponseDto getMoyennesParMatiere(Long eleveId, Integer trimestre) {
+        validerTrimestre(trimestre);
+
+        if (!eleveRepository.existsById(eleveId)) {
+            throw new NotFoundException("Élève non trouvé");
+        }
+
+        List<Note> notes = noteRepository.findNotesByEleveAndTrimestre(eleveId, trimestre);
+        Map<Long, List<Note>> parMatiere = notes.stream()
+                .collect(Collectors.groupingBy(n -> n.getEnseignement().getMatiere().getId()));
+
+        List<MoyenneMatiereDto> matieres = new ArrayList<>();
+        for (Map.Entry<Long, List<Note>> entry : parMatiere.entrySet()) {
+            List<Note> notesMatiere = entry.getValue();
+            BigDecimal somme = BigDecimal.ZERO;
+            BigDecimal sommePoid = BigDecimal.ZERO;
+
+            for (Note note : notesMatiere) {
+                BigDecimal poids = note.getTypeEvaluation().getPoid();
+                somme = somme.add(note.getValeur().multiply(poids));
+                sommePoid = sommePoid.add(poids);
+            }
+
+            BigDecimal moyenne = sommePoid.compareTo(BigDecimal.ZERO) > 0
+                    ? somme.divide(sommePoid, 4, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
+            matieres.add(MoyenneMatiereDto.builder()
+                    .matiereId(entry.getKey())
+                    .matiereNom(notesMatiere.get(0).getEnseignement().getMatiere().getNom())
+                    .moyenne(arrondir(moyenne))
+                    .nombreNotes(notesMatiere.size())
+                    .nonEvalue(false)
+                    .build());
+        }
+
+        Set<Long> matiereIdsAvecNote = matieres.stream()
+                .map(MoyenneMatiereDto::getMatiereId)
+                .collect(Collectors.toSet());
+
+        for (Matiere matiere : matiereRepository.findAll()) {
+            if (!matiereIdsAvecNote.contains(matiere.getId())) {
+                matieres.add(MoyenneMatiereDto.builder()
+                        .matiereId(matiere.getId())
+                        .matiereNom(matiere.getNom())
+                        .moyenne(null)
+                        .nombreNotes(0)
+                        .nonEvalue(true)
+                        .build());
+            }
+        }
+
+        matieres.sort(Comparator.comparing(MoyenneMatiereDto::getMatiereNom));
+
+        return MoyennesParMatiereResponseDto.builder()
+                .eleveId(eleveId)
+                .trimestre(trimestre)
+                .matieres(matieres)
+                .build();
+    }
+
+    public MoyenneGeneraleResponseDto getMoyenneGenerale(Long eleveId, Integer trimestre) {
+        validerTrimestre(trimestre);
+
+        if (!eleveRepository.existsById(eleveId)) {
+            throw new NotFoundException("Élève non trouvé");
+        }
+
+        List<MoyenneMatiereDto> matieres = getMoyennesParMatiere(eleveId, trimestre).getMatieres();
+        BigDecimal somme = BigDecimal.ZERO;
+        BigDecimal sommeCoefficients = BigDecimal.ZERO;
+        List<DetailCoefficientDto> details = new ArrayList<>();
+
+        for (MoyenneMatiereDto ligne : matieres) {
+            if (ligne.isNonEvalue() || ligne.getMoyenne() == null) {
+                continue;
+            }
+
+            Matiere matiere = matiereRepository.findById(ligne.getMatiereId())
+                    .orElseThrow(() -> new NotFoundException("Matière non trouvée"));
+            BigDecimal coefficient = matiere.getCoefficient() == null ? BigDecimal.ONE : matiere.getCoefficient();
+            BigDecimal contribution = ligne.getMoyenne().multiply(coefficient);
+
+            somme = somme.add(contribution);
+            sommeCoefficients = sommeCoefficients.add(coefficient);
+
+            details.add(DetailCoefficientDto.builder()
+                    .matiereId(matiere.getId())
+                    .matiereNom(matiere.getNom())
+                    .moyenneMatiere(arrondir(ligne.getMoyenne()))
+                    .coefficient(coefficient)
+                    .contribution(arrondir(contribution))
+                    .build());
+        }
+
+        BigDecimal moyenneGenerale = sommeCoefficients.compareTo(BigDecimal.ZERO) > 0
+                ? somme.divide(sommeCoefficients, 4, RoundingMode.HALF_UP)
+                : null;
+
+        return MoyenneGeneraleResponseDto.builder()
+                .eleveId(eleveId)
+                .trimestre(trimestre)
+                .moyenneGenerale(moyenneGenerale == null ? null : arrondir(moyenneGenerale))
+                .details(details)
+                .build();
+    }
+
+    public ClassementResponseDto getClassementClasse(Long classeId, Integer trimestre) {
+        validerTrimestre(trimestre);
+
+        Classe classe = classeRepository.findById(classeId)
+                .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+
+        List<Inscription> inscriptions = inscriptionRepository.findByClasseId(classeId);
+        List<ClassementEleveDto> eleves = new ArrayList<>();
+
+        for (Inscription inscription : inscriptions) {
+            MoyenneGeneraleResponseDto moyenneGenerale = getMoyenneGenerale(inscription.getEleve().getId(), trimestre);
+            eleves.add(ClassementEleveDto.builder()
+                    .eleveId(inscription.getEleve().getId())
+                    .nom(inscription.getEleve().getNom())
+                    .prenom(inscription.getEleve().getPrenom())
+                    .rang(null)
+                    .moyenneGenerale(moyenneGenerale.getMoyenneGenerale())
+                    .build());
+        }
+
+        eleves.sort(Comparator.comparing(ClassementEleveDto::getMoyenneGenerale, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(ClassementEleveDto::getNom)
+                .thenComparing(ClassementEleveDto::getPrenom));
+
+        Integer rangCourant = 0;
+        BigDecimal moyennePrecedente = null;
+        for (int i = 0; i < eleves.size(); i++) {
+            ClassementEleveDto eleveDto = eleves.get(i);
+            if (eleveDto.getMoyenneGenerale() == null) {
+                eleveDto.setRang(null);
+                continue;
+            }
+            if (moyennePrecedente == null || eleveDto.getMoyenneGenerale().compareTo(moyennePrecedente) != 0) {
+                rangCourant = i + 1;
+                moyennePrecedente = eleveDto.getMoyenneGenerale();
+            }
+            eleveDto.setRang(rangCourant);
+        }
+
+        List<ClassementEleveDto> avecMoyenne = eleves.stream()
+                .filter(e -> e.getMoyenneGenerale() != null)
+                .collect(Collectors.toList());
+        List<ClassementEleveDto> sansMoyenne = eleves.stream()
+                .filter(e -> e.getMoyenneGenerale() == null)
+                .collect(Collectors.toList());
+
+        List<ClassementEleveDto> elevesOrdonnes = new ArrayList<>(avecMoyenne);
+        elevesOrdonnes.addAll(sansMoyenne);
+
+        BigDecimal moyenneClasse = BigDecimal.ZERO;
+        long nbMoyennes = 0L;
+        for (ClassementEleveDto eleveDto : elevesOrdonnes) {
+            if (eleveDto.getMoyenneGenerale() != null) {
+                moyenneClasse = moyenneClasse.add(eleveDto.getMoyenneGenerale());
+                nbMoyennes++;
+            }
+        }
+
+        BigDecimal moyenneClasseFinale = nbMoyennes > 0
+                ? moyenneClasse.divide(BigDecimal.valueOf(nbMoyennes), 4, RoundingMode.HALF_UP)
+                : null;
+
+        BigDecimal meilleure = avecMoyenne.stream()
+                .map(ClassementEleveDto::getMoyenneGenerale)
+                .max(BigDecimal::compareTo)
+                .orElse(null);
+
+        BigDecimal plusFaible = avecMoyenne.stream()
+                .map(ClassementEleveDto::getMoyenneGenerale)
+                .min(BigDecimal::compareTo)
+                .orElse(null);
+
+        return ClassementResponseDto.builder()
+                .classeId(classe.getId())
+                .nomClasse(classe.getNom())
+                .trimestre(trimestre)
+                .moyenneClasse(moyenneClasseFinale == null ? null : arrondir(moyenneClasseFinale))
+                .meilleureMoyenne(meilleure == null ? null : arrondir(meilleure))
+                .plusFaibleMoyenne(plusFaible == null ? null : arrondir(plusFaible))
+                .eleves(elevesOrdonnes)
+                .build();
+    }
+
 }

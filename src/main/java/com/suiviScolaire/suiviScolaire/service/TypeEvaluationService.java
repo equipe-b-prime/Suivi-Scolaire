@@ -43,6 +43,7 @@ public class TypeEvaluationService {
     public TypeEvaluationResponseDto toDto(TypeEvaluation typeEvaluation) {
         return TypeEvaluationResponseDto.builder()
                 .id(typeEvaluation.getId())
+                .code(typeEvaluation.getCode())
                 .poid(typeEvaluation.getPoid())
                 .nom(typeEvaluation.getNom())
                 .build();
