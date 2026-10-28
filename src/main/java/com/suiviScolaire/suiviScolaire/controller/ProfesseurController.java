@@ -97,4 +97,22 @@ public class ProfesseurController {
     public Response<ResponseDto> delete(@PathVariable Long id) throws Throwable {
         return new Response<>(professeurService.delete(id));
     }
+
+    /**
+     * Affecte une matière à un professeur dans une classe.
+     *
+     * @param id L'identifiant du professeur.
+     * @param matiereId L'identifiant de la matière.
+     * @param classeId L'identifiant de la classe.
+     * @return Response<ResponseDto> Le professeur affecté.
+     * @throws NotFoundException si le professeur, la matière ou la classe n'existe pas
+     * @throws DoublonRessourceException si un professeur est déjà affecté à cette matière dans cette classe (409)
+     */
+    @PostMapping("/{id}/affectations")
+    public Response<ResponseDto> affecterMatiereAProfesseurDansClasse(
+            @PathVariable Long id,
+            @RequestParam Long matiereId,
+            @RequestParam Long classeId) {
+        return new Response<>(professeurService.affecterMatiereAProfesseurDansClasse(id, matiereId, classeId));
+    }
 }
