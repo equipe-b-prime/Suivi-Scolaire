@@ -46,7 +46,7 @@ public class SignalementService {
 
         for (Eleve eleve : eleves) {
             // Vérifier si l'élève a déjà été signalé ce trimestre
-            if (eleve.isEstSigle() && eleve.getTrimestreSigle() != null && eleve.getTrimestreSigle() == numeroTrimestre) {
+            if (Boolean.TRUE.equals(eleve.getEstSigle()) && eleve.getTrimestreSigle() != null && eleve.getTrimestreSigle() == numeroTrimestre) {
                 continue; // Déjà signalé ce trimestre, on saute
             }
 
