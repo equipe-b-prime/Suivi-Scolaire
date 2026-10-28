@@ -37,7 +37,7 @@ public class Eleve {
     private BigDecimal ecartTrimestrePrec;
 
     @Column(name = "est_sigle")
-    private boolean estSigle;
+    private boolean estSigle = false;
 
     @Column(name = "trimestre_sigle")
     private Integer trimestreSigle;
