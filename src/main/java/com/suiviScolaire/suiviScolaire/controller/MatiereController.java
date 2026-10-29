@@ -4,97 +4,63 @@ import com.suiviScolaire.suiviScolaire.dto.MatiereRequestDto;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
 import com.suiviScolaire.suiviScolaire.service.MatiereService;
 import com.suiviScolaire.suiviScolaire.utils.response.Response;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Contrôleur REST pour la gestion des matieres.
- */
 @RestController
 @RequestMapping("/matieres")
+@Tag(name = "Matières", description = "Endpoints pour la gestion du référentiel des matières enseignées")
 public class MatiereController {
 
     private final MatiereService matiereService;
 
-    /**
-     * Constructeur injectant le service des matieres.
-     *
-     * @param matiereService le service des matieres
-     */
     public MatiereController(MatiereService matiereService) {
         this.matiereService = matiereService;
     }
 
-    /**
-     * Récupère une page de matieres.
-     *
-     * @param page l'index de la page souhaitée
-     * @param taille le nombre d'éléments souhaités par page
-     * @return Response<ResponseDto> La page des matieres encapsulée.
-     */
+    @Operation(summary = "Lister toutes les matières", description = "Récupère la liste paginée de toutes les matières enregistrées.")
     @GetMapping
-    public Response<ResponseDto> getAll(@RequestParam(defaultValue = "0") int page,
-                                        @RequestParam(defaultValue = "10") int taille) {
+    public Response<ResponseDto> getAll(
+            @Parameter(description = "Numéro de la page (commence à 0)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Nombre d'éléments par page") @RequestParam(defaultValue = "10") int taille) {
         return new Response<>(matiereService.getAll(page, taille).getContent());
     }
 
-    /**
-     * Récupère un matiere à partir de son identifiant.
-     *
-     * @param id l'identifiant du matiere
-     * @return Response<ResponseDto> Le matiere trouvé encapsulé.
-     * @throws Throwable si le matiere n'est pas trouvé
-     */
+    @Operation(summary = "Obtenir une matière par ID", description = "Retourne les détails d'une matière spécifique à partir de son identifiant.")
     @GetMapping("/{id}")
-    public Response<ResponseDto> getById(@PathVariable Long id) throws Throwable {
+    public Response<ResponseDto> getById(
+            @Parameter(description = "ID unique de la matière", required = true) @PathVariable Long id) throws Throwable {
         return new Response<>(matiereService.getById(id));
     }
 
-    /**
-     * Recherche un matiere à partir de son nom.
-     *
-     * @param nom le nom du matiere recherché
-     * @return Response<ResponseDto> Les détails du matiere trouvé.
-     * @throws Throwable si aucun matiere ne porte ce nom
-     */
+    @Operation(summary = "Rechercher une matière par nom", description = "Permet de rechercher une matière en fonction de son nom ou intitule.")
     @GetMapping("/recherche")
-    public Response<ResponseDto> getByNom(@RequestParam String nom) throws Throwable {
+    public Response<ResponseDto> getByNom(
+            @Parameter(description = "Nom ou partie du nom de la matière", required = true) @RequestParam String nom) throws Throwable {
         return new Response<>(matiereService.getByNom(nom));
     }
 
-    /**
-     * Crée un matiere.
-     *
-     * @param matiereRequest les données de la requête
-     * @return Response<ResponseDto> Le matiere créé encapsulé.
-     */
+    @Operation(summary = "Créer une nouvelle matière", description = "Enregistre une nouvelle matière dans le système.")
     @PostMapping
     public Response<ResponseDto> create(@Valid @RequestBody MatiereRequestDto matiereRequest) {
         return new Response<>(matiereService.create(matiereRequest));
     }
 
-    /**
-     * Modifie le matiere.
-     *
-     * @param id l'identifiant du matiere à modifier
-     * @param matiereRequest les données de la requête
-     * @return Response<ResponseDto> Le matiere modifié encapsulé.
-     */
+    @Operation(summary = "Mettre à jour une matière", description = "Modifie les informations d'une matière existante.")
     @PutMapping("/{id}")
-    public Response<ResponseDto> update(@PathVariable Long id,
-                                        @Valid @RequestBody MatiereRequestDto matiereRequest) {
+    public Response<ResponseDto> update(
+            @Parameter(description = "ID de la matière à modifier", required = true) @PathVariable Long id,
+            @Valid @RequestBody MatiereRequestDto matiereRequest) {
         return new Response<>(matiereService.update(id, matiereRequest));
     }
 
-    /**
-     * Supprime le matiere à partir de son identifiant.
-     *
-     * @param id l'identifiant du matiere
-     * @return Response<ResponseDto> Le matiere supprimé encapsulé.
-     * @throws Throwable si le matiere n'est pas trouvé
-     */
+    @Operation(summary = "Supprimer une matière", description = "Supprime une matière à partir de son ID.")
     @DeleteMapping("/{id}")
-    public Response<ResponseDto> delete(@PathVariable Long id) throws Throwable {
+    public Response<ResponseDto> delete(
+            @Parameter(description = "ID de la matière à supprimer", required = true) @PathVariable Long id) throws Throwable {
         return new Response<>(matiereService.delete(id));
     }
 }

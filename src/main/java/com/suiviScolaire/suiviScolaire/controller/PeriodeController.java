@@ -1,36 +1,31 @@
 package com.suiviScolaire.suiviScolaire.controller;
 
-import com.suiviScolaire.suiviScolaire.entity.Periode;
-import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
-import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
-import com.suiviScolaire.suiviScolaire.repository.ClasseRepository;
-import com.suiviScolaire.suiviScolaire.repository.MatiereRepository;
 import com.suiviScolaire.suiviScolaire.entity.Classe;
 import com.suiviScolaire.suiviScolaire.entity.Matiere;
+import com.suiviScolaire.suiviScolaire.entity.Periode;
 import com.suiviScolaire.suiviScolaire.exception.MotifRouvreInvalideException;
 import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
-import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
 import com.suiviScolaire.suiviScolaire.repository.ClasseRepository;
 import com.suiviScolaire.suiviScolaire.repository.MatiereRepository;
 import com.suiviScolaire.suiviScolaire.repository.NoteRepository;
 import com.suiviScolaire.suiviScolaire.repository.PeriodeRepository;
 import com.suiviScolaire.suiviScolaire.service.NoteService;
-import java.time.LocalDate;
 import com.suiviScolaire.suiviScolaire.utils.response.Response;
 import com.suiviScolaire.suiviScolaire.utils.response.Status;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-/**
- * Contrôleur REST pour la gestion des périodes (trimestres).
- */
 @RestController
 @RequestMapping("/trimestres")
+@Tag(name = "Trimestres / Périodes", description = "Endpoints pour la gestion, la clôture et la réouverture des trimestres scolaires")
 public class PeriodeController {
 
     private final PeriodeRepository periodeRepository;
@@ -51,22 +46,11 @@ public class PeriodeController {
         this.noteRepository = noteRepository;
     }
 
-    /**
-     * Rouvre un trimestre clôturé.
-     * Règle : le motif est obligatoire et doit faire au moins 20 caractères ;
-     * seul le dernier trimestre clôturé peut être rouvert.
-     * Traçabilité : la réouverture est journalisée avec la date, le motif et l'auteur.
-     *
-     * @param numero Le numéro du trimestre à rouvrir.
-     * @param motif Le motif de la réouverture (obligatoire, ≥ 20 caractères).
-     * @return ResponseEntity<Response<String>> Statut de la réouverture.
-     * @throws NotFoundException si le trimestre n'existe pas.
-     * @throws MotifRouvreInvalideException si le motif est absent ou trop court.
-     * @throws RessourceUtiliseeException si le trimestre n'est pas clôturé (409).
-     */
+    @Operation(summary = "Rouvrir un trimestre clôturé", description = "Rouvre le dernier trimestre clôturé sous réserve de fournir un motif explicite d'au moins 20 caractères.")
     @PostMapping("/{numero}/reouverture")
-    public ResponseEntity<Response<String>> reouvertureTrimestre(@PathVariable Integer numero,
-                                                                 @RequestParam String motif) {
+    public ResponseEntity<Response<String>> reouvertureTrimestre(
+            @Parameter(description = "Numéro du trimestre à rouvrir (1, 2 ou 3)", example = "1", required = true) @PathVariable Integer numero,
+            @Parameter(description = "Motif justifiant la réouverture (minimum 20 caractères)", example = "Saisie tardive des notes d'évaluation de rattrapage en mathématiques", required = true) @RequestParam String motif) {
         if (motif == null || motif.trim().length() < 20) {
             throw new MotifRouvreInvalideException("Le motif de réouverture doit faire au moins 20 caractères.");
         }
@@ -81,8 +65,6 @@ public class PeriodeController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
         }
 
-        // Vérifier que c'est le dernier trimestre clôturé
-        // (implémentation simple : vérifier qu'aucun trimestre ultérieur n'est clôturé)
         boolean dernierCloture = true;
         for (int i = numero + 1; i <= 3; i++) {
             Periode trimestreSup = periodeRepository.findByNumero(i).orElse(null);
@@ -99,11 +81,9 @@ public class PeriodeController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
         }
 
-        // Effectuer la réouverture
         periode.setCloture(false);
         periode.setMotifRouvre(motif);
         periode.setDateRouvre(LocalDate.now());
-        // Note: utilisateurRouvre ne serait défini que côté sécurité/authentification
         periodeRepository.save(periode);
 
         Response<String> reponse = new Response<>("Trimestre " + numero + " réouvert avec succès. Motif: " + motif);
@@ -113,17 +93,10 @@ public class PeriodeController {
         return ResponseEntity.ok(reponse);
     }
 
-    /**
-     * Clôture d'un trimestre.
-     * Règle : toutes les matières de toutes les classes doivent avoir au moins une note.
-     * Refus 409 listant les classes et matières sans note.
-     *
-     * @param numero Le numéro du trimestre à clôturer (1, 2 ou 3).
-     * @return ResponseEntity<Response<String>> Statut de la clôture.
-     * @throws NotFoundException si le trimestre n'existe pas.
-     */
+    @Operation(summary = "Clôturer un trimestre", description = "Clôture un trimestre après vérification que toutes les matières de toutes les classes possèdent au moins une note enregistrée.")
     @PostMapping("/{numero}/cloture")
-    public ResponseEntity<Response<String>> clotureTrimestre(@PathVariable Integer numero) {
+    public ResponseEntity<Response<String>> clotureTrimestre(
+            @Parameter(description = "Numéro du trimestre à clôturer (1, 2 ou 3)", example = "1", required = true) @PathVariable Integer numero) {
         Periode periode = periodeRepository.findByNumero(numero)
                 .orElseThrow(() -> new NotFoundException("Trimestre " + numero + " non trouvé"));
 
@@ -134,7 +107,6 @@ public class PeriodeController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
         }
 
-        // Vérifier que toutes les classes ont toutes les matières avec au moins une note pour ce trimestre
         List<String> manques = new ArrayList<>();
         List<Classe> classes = classeRepository.findAll();
         List<Matiere> matieres = matiereRepository.findAll();
@@ -157,7 +129,6 @@ public class PeriodeController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
         }
 
-        // Clôturer le trimestre
         periode.setCloture(true);
         periodeRepository.save(periode);
 
