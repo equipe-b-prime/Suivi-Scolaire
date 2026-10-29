@@ -7,14 +7,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import com.suiviScolaire.suiviScolaire.dto.RequestDto;
 import com.suiviScolaire.suiviScolaire.exception.DoublonRessourceException;
 import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
 import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
-import com.suiviScolaire.suiviScolaire.entity.Coefficient;
-import com.suiviScolaire.suiviScolaire.dto.CoefficientResponseDto;
 import com.suiviScolaire.suiviScolaire.entity.Matiere;
 import com.suiviScolaire.suiviScolaire.repository.EnseignementRepository;
 import com.suiviScolaire.suiviScolaire.repository.MatiereRepository;
@@ -25,14 +22,12 @@ import com.suiviScolaire.suiviScolaire.dto.MatiereResponseDto;
 
 /**
  * Service métier gérant les matières.
- * Fournit la création, la modification, la suppression et les conversions entité/DTO,
- * en remontant pour chaque matière la liste de ses coefficients.
+ * Fournit la création, la modification, la suppression et les conversions entité/DTO.
  */
 @Service
 public class MatiereService extends AbstractCrudService {
 
     private final MatiereRepository matiereRepository;
-    private final CoefficientService coefficientService;
     private final NoteRepository noteRepository;
     private final EnseignementRepository enseignementRepository;
     private final PeriodeRepository periodeRepository;
@@ -41,19 +36,16 @@ public class MatiereService extends AbstractCrudService {
      * Constructeur injectant les repositories des matières, notes, enseignements et périodes.
      *
      * @param matiereRepository le repository des matières
-     * @param coefficientService le service des coefficients (conversion)
      * @param noteRepository le repository des notes
      * @param enseignementRepository le repository des enseignements
      * @param periodeRepository le repository des périodes
      */
     public MatiereService(MatiereRepository matiereRepository,
-                          CoefficientService coefficientService,
                           NoteRepository noteRepository,
                           EnseignementRepository enseignementRepository,
                           PeriodeRepository periodeRepository) {
         super(matiereRepository);
         this.matiereRepository = matiereRepository;
-        this.coefficientService = coefficientService;
         this.noteRepository = noteRepository;
         this.enseignementRepository = enseignementRepository;
         this.periodeRepository = periodeRepository;
@@ -67,13 +59,13 @@ public class MatiereService extends AbstractCrudService {
      */
     public Matiere toEntity(MatiereRequestDto matiereRequest) {
         return Matiere.builder()
-                .nom(matiereRequest.getNom())
+                .nom(matiereRequest.getLibelle())
                 .coefficient(matiereRequest.getCoefficient())
                 .build();
     }
 
     /**
-     * Convertit une entité matière en objet de réponse, avec ses coefficients.
+     * Convertit une entité matière en objet de réponse.
      *
      * @param entity L'entité matière à convertir.
      * @return ResponseDto Les détails de la matière convertie.
@@ -84,22 +76,16 @@ public class MatiereService extends AbstractCrudService {
     }
 
     /**
-     * Convertit une entité matière en objet de réponse, avec ses coefficients.
+     * Convertit une entité matière en objet de réponse.
      *
      * @param matiere L'entité matière à convertir.
      * @return MatiereResponseDto Les détails de la matière convertie.
      */
     public MatiereResponseDto toDto(Matiere matiere) {
-        List<CoefficientResponseDto> coefficients = matiereRepository
-                .findCoefficientsByMatiere(matiere.getId())
-                .stream()
-                .map(coefficientService::toDto)
-                .toList();
         return MatiereResponseDto.builder()
                 .id(matiere.getId())
                 .nom(matiere.getNom())
                 .coefficient(matiere.getCoefficient())
-                .coefficients(coefficients)
                 .build();
     }
 
@@ -126,8 +112,8 @@ public class MatiereService extends AbstractCrudService {
     @Override
     public ResponseDto create(RequestDto requestDto) {
         MatiereRequestDto matiereRequest = (MatiereRequestDto) requestDto;
-        if (matiereRepository.existsByNom(matiereRequest.getNom())) {
-            throw new DoublonRessourceException("Une matière '" + matiereRequest.getNom() + "' existe déjà.");
+        if (matiereRepository.existsByNom(matiereRequest.getLibelle())) {
+            throw new DoublonRessourceException("Une matière '" + matiereRequest.getLibelle() + "' existe déjà.");
         }
         return toDto(matiereRepository.save(toEntity(matiereRequest)));
     }
@@ -150,7 +136,7 @@ public class MatiereService extends AbstractCrudService {
         if (periodeRepository.existsByClotureTrue()) {
             throw new IllegalArgumentException("Le coefficient n'est plus modifiable : un trimestre est clôturé.");
         }
-        matiere.setNom(matiereRequest.getNom());
+        matiere.setNom(matiereRequest.getLibelle());
         matiere.setCoefficient(matiereRequest.getCoefficient());
         return toDto(matiereRepository.save(matiere));
     }

@@ -1,6 +1,10 @@
 package com.suiviScolaire.suiviScolaire.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,6 +21,7 @@ import com.suiviScolaire.suiviScolaire.dto.RequestDto;
 import com.suiviScolaire.suiviScolaire.exception.NotFoundException;
 import com.suiviScolaire.suiviScolaire.exception.RequeteInvalideException;
 import com.suiviScolaire.suiviScolaire.exception.RessourceUtiliseeException;
+import com.suiviScolaire.suiviScolaire.exception.DoublonRessourceException;
 import com.suiviScolaire.suiviScolaire.dto.ResponseDto;
 import com.suiviScolaire.suiviScolaire.entity.Inscription;
 import com.suiviScolaire.suiviScolaire.repository.InscriptionRepository;
@@ -83,6 +88,7 @@ public class EleveService extends AbstractCrudService {
     public EleveResponseDto toDto(Eleve eleve) {
         EleveResponseDto dto = new EleveResponseDto();
         dto.setId(eleve.getId());
+        dto.setMatricule(eleve.getMatricule());
         dto.setNom(eleve.getNom());
         dto.setPrenom(eleve.getPrenom());
         dto.setDateNaissance(eleve.getDateNaissance());
@@ -154,7 +160,12 @@ public class EleveService extends AbstractCrudService {
     @Override
     public ResponseDto create(RequestDto requestDto) {
         EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
+        if (eleveRepository.existsByMatricule(eleveRequest.getMatricule())) {
+            throw new DoublonRessourceException("Un élève avec le matricule '"
+                    + eleveRequest.getMatricule() + "' existe déjà.");
+        }
         Eleve eleve = Eleve.builder()
+                .matricule(eleveRequest.getMatricule())
                 .nom(eleveRequest.getNom())
                 .prenom(eleveRequest.getPrenom())
                 .dateNaissance(eleveRequest.getDateNaissance())
@@ -182,6 +193,14 @@ public class EleveService extends AbstractCrudService {
         EleveRequestDto eleveRequest = (EleveRequestDto) requestDto;
         Eleve eleve = eleveRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(NOT_FOUND_MESSAGE));
+        if (!eleveRequest.getDateNaissance().equals(eleve.getDateNaissance())) {
+            throw new RequeteInvalideException("La date de naissance est figée et ne peut pas être modifiée.");
+        }
+        if (eleveRepository.existsByMatriculeAndIdNot(eleveRequest.getMatricule(), id)) {
+            throw new DoublonRessourceException("Un autre élève avec le matricule '"
+                    + eleveRequest.getMatricule() + "' existe déjà.");
+        }
+        eleve.setMatricule(eleveRequest.getMatricule());
         eleve.setNom(eleveRequest.getNom());
         eleve.setPrenom(eleveRequest.getPrenom());
         eleveRepository.save(eleve);
@@ -325,5 +344,18 @@ public class EleveService extends AbstractCrudService {
         return eleveRepository.findClassesByEleve(eleve.getId()).stream()
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Récupère tous les élèves, triés par nom puis prénom.
+     *
+     * @param page L'identifiant de la page.
+     * @param taille La taille de la page.
+     * @return Page<ResponseDto> La page d'élèves.
+     */
+    @Override
+    public Page<ResponseDto> getAll(int page, int taille) {
+        Pageable pageable = PageRequest.of(pageAutorisee(page), tailleAutorisee(taille), Sort.by("nom").and(Sort.by("prenom")));
+        return eleveRepository.findAll(pageable).map(this::toDto);
     }
 }

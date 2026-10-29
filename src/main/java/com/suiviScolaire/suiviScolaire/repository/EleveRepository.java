@@ -18,6 +18,10 @@ import com.suiviScolaire.suiviScolaire.entity.Inscription;
 @Repository
 public interface EleveRepository extends JpaRepository<Eleve, Long> {
 
+    boolean existsByMatricule(String matricule);
+
+    boolean existsByMatriculeAndIdNot(String matricule, Long id);
+
     /**
      * Récupère les classes d'un élève via ses inscriptions,
      * de la plus récente à la plus ancienne (par année).

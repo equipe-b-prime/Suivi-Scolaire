@@ -4,11 +4,8 @@ import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
-import java.util.List;
-
 /**
  * Réponse contenant les données d'une matière.
- * Le champ coefficients n'est renseigné que pour le détail d'une matière.
  */
 @Getter
 @Setter
@@ -21,5 +18,4 @@ public class MatiereResponseDto implements ResponseDto {
     private String nom;
 
     private BigDecimal coefficient;
-    private List<CoefficientResponseDto> coefficients;
 }

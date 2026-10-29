@@ -17,6 +17,7 @@ import java.time.LocalDate;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class EleveResponseDto implements ResponseDto {
     private Long id;
+    private String matricule;
     private String nom;
     private String prenom;
     private LocalDate dateNaissance;

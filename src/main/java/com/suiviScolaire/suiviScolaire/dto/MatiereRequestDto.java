@@ -23,8 +23,8 @@ import lombok.*;
 @NoArgsConstructor
 public class MatiereRequestDto implements RequestDto {
     private Long id;
-    @NotBlank(message = "Le nom est obligatoire")
-    private String nom;
+    @NotBlank(message = "Le libelle est obligatoire")
+    private String libelle;
     @NotNull(message = "Le coefficient est obligatoire")
     @DecimalMin(value = "0", inclusive = false, message = "Le coefficient doit être strictement positif")
     private BigDecimal coefficient;

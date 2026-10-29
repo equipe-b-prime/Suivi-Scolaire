@@ -20,6 +20,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class EleveRequestDto implements RequestDto {
     private Long id;
+    @NotBlank(message = "Le matricule est obligatoire")
+    private String matricule;
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;
     @NotBlank(message = "Le prenom est obligatoire")

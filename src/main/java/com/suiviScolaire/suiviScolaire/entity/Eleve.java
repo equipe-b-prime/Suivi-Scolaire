@@ -9,7 +9,8 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "eleve", indexes = {
-    @Index(name = "idx_eleve_nom_prenom", columnList = "nom, prenom")
+    @Index(name = "idx_eleve_nom_prenom", columnList = "nom, prenom"),
+    @Index(name = "idx_eleve_matricule", columnList = "matricule", unique = true)
 })
 @Getter
 @Setter
@@ -20,6 +21,9 @@ public class Eleve {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true, length = 50)
+    private String matricule;
 
     @Column(nullable = false, length = 100)
     private String nom;
