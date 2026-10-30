@@ -1,121 +1,199 @@
-# 🎓 Plateforme API — Suivi Scolaire
+# 🎓 Suivi Scolaire API — Plateforme de Gestion Académique
 
-API REST complète de gestion et de suivi de scolarité développée avec **Spring Boot (Java 21)**, **Spring Data JPA**, **PostgreSQL**, **Flyway** et **SpringDoc OpenAPI (Swagger UI)**.
-
-L'application permet de piloter l'ensemble de la scolarité d'un établissement : gestion des promotions, inscriptions, suivi pédagogique, calcul automatique des moyennes, génération des bulletins trimestriels, gestion des absences et clôture/réouverture sécurisée des périodes d'évaluation.
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" alt="Spring Boot" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Flyway-Migrations-CC0202?style=for-the-badge&logo=flyway&logoColor=white" alt="Flyway" />
+  <img src="https://img.shields.io/badge/Render-Hosted-46E3B7?style=for-the-badge&logo=render&logoColor=black" alt="Render" />
+  <img src="https://img.shields.io/badge/Neon-Cloud_DB-00E599?style=for-the-badge&logo=neon&logoColor=black" alt="Neon DB" />
+  <img src="https://img.shields.io/badge/Swagger-OpenAPI_3.0-85EA2D?style=for-the-badge&logo=swagger&logoColor=black" alt="Swagger" />
+  <img src="https://img.shields.io/badge/Postman-Ready-FF6C37?style=for-the-badge&logo=postman&logoColor=white" alt="Postman" />
+</p>
 
 ---
 
-## 📌 Accès Rapide & Liens Swagger
+## 📖 Sommaire
+1. [🌟 Présentation du Projet](#-présentation-du-projet)
+2. [🌐 Accès & Documentation Interactive (Swagger)](#-accès--documentation-interactive-swagger)
+3. [🏗️ Architecture Globale & Déploiement](#️-architecture-globale--déploiement)
+4. [🗄️ Gestion des Bases de Données & Flyway](#️-gestion-des-bases-de-données--flyway)
+5. [📬 Collection Postman (Pièce Jointe)](#-collection-postman-pièce-jointe)
+6. [⚡ Exemples de Commandes cURL (En Ligne & Local)](#-exemples-de-commandes-curl-en-ligne--local)
+7. [💻 Guide de Démarrage en Local](#-guide-de-démarrage-en-local)
+8. [📁 Organisation des Tests & Bonnes Pratiques](#-organisation-des-tests--bonnes-pratiques)
 
-L'API est entièrement déployée en continu dans le cloud sur **Render**, connectée à une base de données cloud **Neon PostgreSQL**, tout en étant immédiatement reproductible et testable en environnement local.
+---
 
-| Environnement | URL de Base | Documentation Interactive Swagger UI |
+## 🌟 Présentation du Projet
+
+L'API **Suivi Scolaire** est une solution backend robuste conçue pour administrer l'intégralité du cycle de vie d'un établissement d'enseignement secondaire ou supérieur. 
+
+### 🎯 Fonctionnalités clés :
+* **Gestion des structures académiques** : Niveaux, classes, matières, coefficients et affectation des professeurs.
+* **Gestion des élèves & inscriptions** : Matricules uniques, dossiers d'inscriptions, aménagements spécifiques.
+* **Évaluations & Notes** : Périodes trimestrielles, types d'évaluations, barèmes et coefficients.
+* **Règles métier avancées** : Clôture/réouverture sécurisée des trimestres, calcul dynamique des moyennes pondérées, détection des élèves siglés.
+* **Restitution & Décision** : Bulletins de notes trimestriels, statistiques et comparatifs de moyennes.
+
+---
+
+## 🌐 Accès & Documentation Interactive (Swagger)
+
+L'API est hébergée sur le cloud **Render** et reliée à une base de données managée **Neon PostgreSQL**, tout en étant 100% exécutable en local sur votre poste.
+
+| Composant | Environnement Cloud (En Ligne) | Environnement Local |
 | :--- | :--- | :--- |
-| **🌐 En Ligne (Render + Neon)** | `https://suivi-scolaire-t62q.onrender.com` | [Swagger UI En Ligne](https://suivi-scolaire-t62q.onrender.com/swagger-ui/index.html) |
-| **💻 Local (PostgreSQL)** | `http://localhost:8080` | [Swagger UI Local](http://localhost:8080/swagger-ui/index.html) |
+| **Hôte / Plateforme** | **Render Cloud** | **Machine Locale** |
+| **URL Racine API** | [`https://suivi-scolaire-t62q.onrender.com`](https://suivi-scolaire-t62q.onrender.com) | `http://localhost:8080` |
+| **Swagger UI Interactive** | [👉 Consulter Swagger en ligne](https://suivi-scolaire-t62q.onrender.com/swagger-ui/index.html) | [👉 Consulter Swagger en local](http://localhost:8080/swagger-ui/index.html) |
+| **Exemple direct (Classes)** | [`Swagger - Classes/getAll_4`](https://suivi-scolaire-t62q.onrender.com/swagger-ui/index.html#/Classes/getAll_4) | `http://localhost:8080/swagger-ui/index.html#/Classes` |
+| **Spécification OpenAPI JSON** | [`/v3/api-docs`](https://suivi-scolaire-t62q.onrender.com/v3/api-docs) | `http://localhost:8080/v3/api-docs` |
+
+> [!TIP]
+> Vous pouvez tester n'importe quel endpoint directement depuis votre navigateur avec l'interface Swagger UI grâce au bouton **"Try it out"**.
 
 ---
 
-## 🗄️ Architecture des Bases de Données & Migrations (Flyway)
+## 🏗️ Architecture Globale & Déploiement
 
-Le projet sépare et standardise la persistance grâce aux migrations de schéma et de données gérées par **Flyway** :
+```mermaid
+flowchart TD
+    subgraph Clients["📱 Clients & Outils de Test"]
+        Postman["📬 Postman (ZKANTAPI.postman_collection.json)"]
+        Swagger["🌐 Swagger UI (Navigateur Web)"]
+        Curl["⚡ Ligne de commande cURL"]
+    end
 
-- **Base de données en ligne** : Hébergée sur **Neon PostgreSQL** (serverless, haute résilience et connectivité SSL).
-- **Base de données locale** : PostgreSQL local (`localhost:5432/suivi_scolaire`).
-- **Migrations Flyway intégrées** :
-  - [`V1.0.1__DDL.sql`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/src/main/resources/db/migration/V1.0.1__DDL.sql) : Création intégrale du schéma relationnel (19 tables : `annee`, `niveau`, `classe`, `matiere`, `professeur`, `eleve`, `periode`, `type_evaluation`, `coefficient`, `inscription`, `enseignement`, `note`, `salle`, `creneaux`, `cours`, `absence`, `bulettin`, `moyenne_matieres`, `amenagement`), contraintes d'intégrité, clés étrangères et index d'optimisation.
-  - [`V1.0.2__DML.sql`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/src/main/resources/db/migration/V1.0.2__DML.sql) : Initialisation du jeu de données de test et de référence (JDD dynamique avec les élèves `ELV-1` à `ELV-78`, classes, coefficients, inscriptions et notes), ainsi que réalignement des séquences `IDENTITY` (`setval`).
+    subgraph CloudEnv["☁️ Environnement Cloud (Production / Démo)"]
+        Render["🚀 Web Service Render\n(Spring Boot 4.1.1 - Java 21)"]
+        NeonDB[("🐘 Neon PostgreSQL\n(Serverless DB + SSL)")]
+        Render -->|Connexion JDBC poolée| NeonDB
+    end
 
----
+    subgraph LocalEnv["💻 Environnement Local (Développement)"]
+        LocalApp["☕ Spring Boot Local (Port 8080)"]
+        LocalDB[("🐘 PostgreSQL Local\n(localhost:5432)")]
+        LocalApp -->|JDBC localhost| LocalDB
+    end
 
-## 📬 Pièce Jointe : Collection Postman Complète
-
-Pour simplifier les tests et la recette fonctionnelle, une collection Postman exhaustive est fournie en pièce jointe directement à la racine du projet :
-
-📄 **[`ZKANTAPI.postman_collection.json`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/ZKANTAPI.postman_collection.json)**
-
-### Comment l'importer et basculer en un clic :
-1. Dans **Postman**, cliquez sur le bouton **Import** (en haut à gauche).
-2. Glissez-déposez le fichier `ZKANTAPI.postman_collection.json`.
-3. Une variable de collection nommée `baseUrl` est pré-configurée. Pour basculer entre vos environnements :
-   - **Test En Ligne (Render)** : Réglez `baseUrl` à `https://suivi-scolaire-t62q.onrender.com`
-   - **Test En Local** : Réglez `baseUrl` à `http://localhost:8080`
-4. La collection regroupe l'ensemble des scénarios découpés par niveaux fonctionnels :
-   - **Niveau 1 — CRUD** : Gestion des classes, élèves, matières, professeurs, types d'évaluation.
-   - **Niveau 2 — Consultation & Recherche** : Planning des cours, historique des absences, notes par élève, liste des classes triées.
-   - **Niveau 3 — Règles Métier** : Clôture et réouverture exceptionnelle des trimestres avec motif, gestion des reports et sanctions d'absences, application des coefficients.
-   - **Niveau 4 — Restitution & Décision** : Génération des bulletins de notes, calcul des moyennes générales, classements et statistiques de réussite.
+    Clients -->|Requêtes HTTP / HTTPS| Render
+    Clients -->|Requêtes HTTP localhost| LocalApp
+```
 
 ---
 
-## 🧪 Tests & Exemples de Requêtes cURL
+## 🗄️ Gestion des Bases de Données & Flyway
 
-Vous pouvez exécuter les commandes cURL ci-dessous indifféremment sur l'environnement en ligne ou en local.
+Le projet applique les principes de **Database-as-Code** grâce à **Flyway**. Que vous vous connectiez à la base en ligne Neon ou que vous cloniez le dépôt pour la première fois en local, **aucune intervention manuelle n'est requise** : la base est automatiquement créée et pré-remplie au démarrage de l'application !
+
+### 1. Deux environnements de données synchronisés
+* **Base de données en ligne** : Hébergée sur **Neon**, sécurisée par SSL.
+* **Base de données locale** : PostgreSQL local (`suivi_scolaire`).
+
+### 2. Migrations Flyway automatisées
+* 📜 **`V1.0.1__DDL.sql`** :
+  * Nettoyage préalable dynamique des tables et vues obsolètes.
+  * Création ordonnée de la structure complète (**19 tables relationnelles** : `annee`, `niveau`, `classe`, `matiere`, `professeur`, `eleve`, `periode`, `type_evaluation`, `coefficient`, `inscription`, `enseignement`, `note`, `salle`, `creneaux`, `cours`, `absence`, `bulettin`, `moyenne_matieres`, `amenagement`).
+  * Mise en place des index de recherche optimisés (`matricule`, `nom`, `prenom`, etc.).
+* 📊 **`V1.0.2__DML.sql`** :
+  * Injection du jeu de données de test complet (élèves répertoriés de `ELV-1` à `ELV-78`, classes de 6ème à Terminale, matières et professeurs, coefficients, notes de trimestres).
+  * Réalignement automatique des séquences `IDENTITY` (`setval`) pour garantir des créations d'entités sans conflit de clé primaire via l'API.
+
+---
+
+## 📬 Collection Postman (Pièce Jointe : `postman.json`)
+
+Pour permettre une recette rapide et exhaustive sans ressaisir les URLs ni les payloads JSON, la collection Postman complète et prête à l'emploi est directement fournie en pièce jointe à la racine du projet sous le nom :
+
+📦 **[`postman.json`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/postman.json)** *(également disponible sous `ZKANTAPI.postman_collection.json`)*
+
+### 🚀 Guide d'importation dans Postman :
+1. **Ouvrir Postman** et cliquer sur **Import** en haut à gauche.
+2. Sélectionner ou glisser-déposer le fichier [`postman.json`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/postman.json) (ou `ZKANTAPI.postman_collection.json`).
+3. **Bascule en un clic :** Modifier la variable `baseUrl` de la collection :
+   * Pour tester **En Ligne** : `https://suivi-scolaire-t62q.onrender.com`
+   * Pour tester **En Local** : `http://localhost:8080`
+
+### 📋 Structure de la Collection :
+* **Niveau 1 — CRUD de Base** : Gestion des classes, élèves, professeurs, matières et types d'évaluation.
+* **Niveau 2 — Recherches & Consultations** : Filtres paginés, emplois du temps, suivi des absences par période.
+* **Niveau 3 — Règles Métier Avancées** : Clôture/réouverture des trimestres avec motifs, alertes de décrochage scolaire, élèves siglés.
+* **Niveau 4 — Restitution & Décision** : Calcul des moyennes pondérées, génération des bulletins officiels et classements.
+
+---
+
+## ⚡ Exemples de Commandes cURL (En Ligne & Local)
+
+Vous pouvez copier/coller ces commandes directement dans votre terminal pour tester instantanément.
 
 ### 1. Consulter la liste des classes
-* **En ligne :**
 ```bash
-curl -X GET "https://suivi-scolaire-t62q.onrender.com/classes" \
-     -H "Accept: application/json"
-```
-* **En local :**
-```bash
-curl -X GET "http://localhost:8080/classes" \
-     -H "Accept: application/json"
+# 🌐 En Ligne (Render)
+curl -X GET "https://suivi-scolaire-t62q.onrender.com/classes" -H "Accept: application/json"
+
+# 💻 En Local
+curl -X GET "http://localhost:8080/classes" -H "Accept: application/json"
 ```
 
-### 2. Consulter la liste des élèves (paginée)
+### 2. Consulter la fiche d'un élève (ex: ID 1)
 ```bash
-curl -X GET "https://suivi-scolaire-t62q.onrender.com/eleves?page=0&taille=5" \
-     -H "Accept: application/json"
+# 🌐 En Ligne (Render)
+curl -X GET "https://suivi-scolaire-t62q.onrender.com/eleves/1" -H "Accept: application/json"
+
+# 💻 En Local
+curl -X GET "http://localhost:8080/eleves/1" -H "Accept: application/json"
 ```
 
-### 3. Consulter les matières et leurs coefficients
+### 3. Consulter les matières et coefficients
 ```bash
-curl -X GET "https://suivi-scolaire-t62q.onrender.com/matieres" \
-     -H "Accept: application/json"
+curl -X GET "https://suivi-scolaire-t62q.onrender.com/matieres" -H "Accept: application/json"
 ```
 
-### 4. Consulter l'état des trimestres d'évaluation
+### 4. Consulter les bulletins trimestriels
 ```bash
-curl -X GET "https://suivi-scolaire-t62q.onrender.com/trimestres" \
-     -H "Accept: application/json"
-```
-
-### 5. Consulter le bulletin de notes d'un élève (Niveau 4)
-```bash
-curl -X GET "https://suivi-scolaire-t62q.onrender.com/eleves/1/bulletin" \
-     -H "Accept: application/json"
+curl -X GET "https://suivi-scolaire-t62q.onrender.com/eleves/1/bulletin" -H "Accept: application/json"
 ```
 
 ---
 
-## 📁 Organisation des Fichiers de Tests (`test-docs/`)
+## 💻 Guide de Démarrage en Local
 
-Afin de préserver un dépôt Git épuré et respectant les meilleures pratiques de maintenance :
-- Tous les scripts d'automatisation de tests (`.sh`) ainsi que les fiches détaillées de commandes cURL (`.md`) ont été isolés dans le dossier dédié :
-  📁 **`test-docs/`**
-- Ce dossier est explicitement exclu du versionnement dans [`.gitignore`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/.gitignore) via la règle `test-docs/`.
-
----
-
-## 💻 Démarrage Rapide en Local
-
-### Prérequis
-- Java 21 (JDK)
-- PostgreSQL (ou Docker PostgreSQL)
-- Maven (`./mvnw` inclus)
-
-### 1. Lancement
+### 1. Cloner le projet
 ```bash
 git clone git@github.com:kanteyouss/Suivi-Scolaire.git
 cd Suivi-Scolaire
+git checkout KANTAPI-N4-F001
+```
+
+### 2. Prérequis
+* **JDK 21** installé (`java -version`)
+* **PostgreSQL** démarré avec une base `suivi_scolaire` créée :
+```sql
+CREATE DATABASE suivi_scolaire;
+```
+
+### 3. Lancer l'application
+```bash
 ./mvnw clean spring-boot:run
 ```
 
-Au démarrage, Flyway applique automatiquement les migrations `V1.0.1__DDL.sql` et `V1.0.2__DML.sql`.
+Au démarrage :
+1. Flyway migre le schéma et insère les 500+ lignes de test en moins d'une seconde.
+2. L'application démarre sur le port `8080`.
+3. Rendez-vous sur `http://localhost:8080/swagger-ui/index.html` !
 
-### 2. Accès
-- API : `http://localhost:8080`
-- Swagger UI : `http://localhost:8080/swagger-ui/index.html`
+---
+
+## 📁 Organisation des Tests & Bonnes Pratiques
+
+Pour respecter les standards de propreté logicielle et d'intégration continue :
+* 📂 **Dossier `test-docs/`** : Tous les scripts bash de simulation (`test_niveau1.sh`, `test_niveau2_3_4.sh`) ainsi que les fiches détaillées de tests Markdown (`Tests_CURL_*.md`, `DTO_ANALYSIS.md`) ont été regroupés dans ce sous-dossier dédié.
+* 🛡️ **`.gitignore`** : Le dossier `test-docs/` est explicitement ignoré afin de maintenir un dépôt Git propre et focalisé sur le code applicatif, la documentation principale et la collection Postman.
+* 📦 **Collection Postman** : [`postman.json`](file:///home/yokan/TAF/FORMATION/TESTO/suiviScolaire/postman.json) *(et `ZKANTAPI.postman_collection.json`)* reste versionnée à la racine pour un partage immédiat avec toute personne évaluant ou intégrant l'API.
+
+---
+
+<p align="center">
+  <b>Développé & Déployé avec excellence — API Suivi Scolaire</b>
+</p>
