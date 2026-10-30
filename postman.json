@@ -1,0 +1,1978 @@
+{
+  "info": {
+    "_postman_id": "8d787761-cac6-42b8-8f1e-97c1457014b6",
+    "name": "ZKANTAPI — Suivi Scolaire (Niveaux 1 à 4)",
+    "description": "Collection Postman complète pour le Projet 4 — Le Suivi Scolaire (F1 à F19). Couvre le CRUD (Niveau 1), la Consultation et Recherche (Niveau 2), les Règles Métier (Niveau 3) et la Restitution (Niveau 4).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "NIVEAU 1 — LE CRUD (F1 à F5)",
+      "item": [
+        {
+          "name": "F1. Gérer les classes",
+          "item": [
+            {
+              "name": "F1 - Lister les classes (triées par niveau puis nom)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes?page=0&taille=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "taille",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Liste paginée triée par niveau puis nom avec effectifReel"
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Consulter une classe par ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1"
+                  ]
+                },
+                "description": "Retourne la classe d'ID 1"
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Consulter une classe inconnue (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "999999"
+                  ]
+                },
+                "description": "Identifiant inconnu renvoie 404"
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Créer une classe valide",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes"
+                  ]
+                },
+                "description": "Création avec nom, niveau et effectifMax positif",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"6ème C\",\n  \"niveau\": \"6ème\",\n  \"effectifMax\": 35\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Créer une classe — Doublon nom/niveau (409)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes"
+                  ]
+                },
+                "description": "Deux classes de même nom dans un même niveau sont refusées (409)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"6ème C\",\n  \"niveau\": \"6ème\",\n  \"effectifMax\": 35\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Créer une classe — Effectif négatif (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/classes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes"
+                  ]
+                },
+                "description": "L'effectif doit être positif (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"6ème Z\",\n  \"niveau\": \"6ème\",\n  \"effectifMax\": -5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Modifier une classe valide",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1"
+                  ]
+                },
+                "description": "Modification d'une classe",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"6ème A\",\n  \"niveau\": \"6ème\",\n  \"effectifMax\": 40\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Modifier une classe — Effectif sous effectif actuel (409)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1"
+                  ]
+                },
+                "description": "L'effectif maximal ne peut pas être ramené sous l'effectif actuel (409)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"6ème A\",\n  \"niveau\": \"6ème\",\n  \"effectifMax\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F1 - Supprimer une classe ayant des élèves (409)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1"
+                  ]
+                },
+                "description": "Suppression refusée si la classe a des élèves (409)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F2. Gérer les élèves",
+          "item": [
+            {
+              "name": "F2 - Lister les élèves (triés par nom puis prénom)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves?page=0&taille=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "taille",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Liste triée par nom puis prénom et indique la classe"
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Consulter un élève par ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1"
+                  ]
+                },
+                "description": "Détails de l'élève"
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Consulter un élève inconnu (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "999999"
+                  ]
+                },
+                "description": "Un identifiant inconnu renvoie 404"
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Créer un élève valide",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves"
+                  ]
+                },
+                "description": "Création d'un élève avec nom, prénom, dateNaissance dans le passé et classe non pleine",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricule\": \"ELV-POSTMAN-01\",\n  \"nom\": \"Konan\",\n  \"prenom\": \"Yao\",\n  \"dateNaissance\": \"2013-04-15\",\n  \"classeId\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Créer un élève — Date de naissance future (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves"
+                  ]
+                },
+                "description": "La date de naissance doit être dans le passé (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricule\": \"ELV-FUTUR-01\",\n  \"nom\": \"Konan\",\n  \"prenom\": \"Futur\",\n  \"dateNaissance\": \"2099-01-01\",\n  \"classeId\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Modifier un élève valide",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1"
+                  ]
+                },
+                "description": "Modification du nom/prénom/classe",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricule\": \"ELV-2026-001\",\n  \"nom\": \"Kouassi\",\n  \"prenom\": \"Jean-Marc\",\n  \"dateNaissance\": \"2013-03-12\",\n  \"classeId\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Modifier un élève — Date de naissance figée (400)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1"
+                  ]
+                },
+                "description": "La date de naissance est figée (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"matricule\": \"ELV-2026-001\",\n  \"nom\": \"Kouassi\",\n  \"prenom\": \"Jean-Marc\",\n  \"dateNaissance\": \"2010-01-01\",\n  \"classeId\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F2 - Supprimer un élève ayant des notes (409)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1"
+                  ]
+                },
+                "description": "Suppression refusée si l'élève a des notes (409)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F3. Gérer les matières",
+          "item": [
+            {
+              "name": "F3 - Lister les matières (triées par libellé)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres?page=0&taille=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "taille",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Liste triée par libellé"
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Consulter une matière par ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres",
+                    "1"
+                  ]
+                },
+                "description": "Détails de la matière"
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Consulter une matière inconnue (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres",
+                    "999999"
+                  ]
+                },
+                "description": "Identifiant inconnu renvoie 404"
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Créer une matière valide",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres"
+                  ]
+                },
+                "description": "Création avec libellé unique et coefficient strictement positif",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"libelle\": \"Philosophie\",\n  \"coefficient\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Créer une matière — Libellé doublon (409)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres"
+                  ]
+                },
+                "description": "Le libellé est unique (409)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"libelle\": \"Philosophie\",\n  \"coefficient\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Créer une matière — Coefficient <= 0 (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres"
+                  ]
+                },
+                "description": "Le coefficient doit être strictement positif (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"libelle\": \"Arts\",\n  \"coefficient\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Modifier une matière",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres/2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres",
+                    "2"
+                  ]
+                },
+                "description": "Le coefficient est modifiable tant qu'aucun trimestre n'est clôturé",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"libelle\": \"Français\",\n  \"coefficient\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F3 - Supprimer une matière liée à des notes/professeur (409)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/matieres/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "matieres",
+                    "1"
+                  ]
+                },
+                "description": "Suppression refusée si la matière a des notes ou un professeur affecté (409)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F4. Gérer les professeurs",
+          "item": [
+            {
+              "name": "F4 - Lister les professeurs (triés par nom)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs?page=0&taille=10",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "taille",
+                      "value": "10"
+                    }
+                  ]
+                },
+                "description": "Liste triée par nom"
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Consulter un professeur par ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "1"
+                  ]
+                },
+                "description": "Détails du professeur"
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Consulter un professeur inconnu (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "999999"
+                  ]
+                },
+                "description": "Identifiant inconnu renvoie 404"
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Créer un professeur valide",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs"
+                  ]
+                },
+                "description": "Création avec nom, email unique et matière principale existante",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"Bamba\",\n  \"prenom\": \"Drissa\",\n  \"email\": \"drissa.bamba@ecole.ci\",\n  \"telephone\": \"0708091011\",\n  \"matiereId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Créer un professeur — Email doublon (409)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs"
+                  ]
+                },
+                "description": "L'email est unique (409)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"Autre\",\n  \"prenom\": \"Prof\",\n  \"email\": \"drissa.bamba@ecole.ci\",\n  \"telephone\": \"0700000000\",\n  \"matiereId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Créer un professeur — Matière inexistante (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs"
+                  ]
+                },
+                "description": "La matière principale doit exister (404)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"Bamba\",\n  \"prenom\": \"Test\",\n  \"email\": \"test.matiere@ecole.ci\",\n  \"telephone\": \"0708091011\",\n  \"matiereId\": 999999\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Modifier un professeur",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "1"
+                  ]
+                },
+                "description": "Les coordonnées et la matière principale sont modifiables",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nom\": \"Diabaté\",\n  \"prenom\": \"Moussa\",\n  \"email\": \"moussa.diabate@ecole.ci\",\n  \"telephone\": \"0102030405\",\n  \"matiereId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F4 - Supprimer un professeur affecté (409)",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "1"
+                  ]
+                },
+                "description": "Suppression refusée si le professeur est affecté à une classe (409)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F5. Gérer les notes",
+          "item": [
+            {
+              "name": "F5 - Lister les notes",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes?page=0&size=30",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "30"
+                    }
+                  ]
+                },
+                "description": "Consultation paginée des notes"
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Consulter une note par ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes",
+                    "1"
+                  ]
+                },
+                "description": "Détails d'une note"
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Consulter une note inconnue (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes",
+                    "999999"
+                  ]
+                },
+                "description": "Identifiant inconnu renvoie 404"
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Créer une note valide (entre 0 et 20)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ]
+                },
+                "description": "Création d'une note valide tant que le trimestre n'est pas clôturé",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"valeur\": 15.5,\n  \"inscriptionId\": 1,\n  \"enseignementId\": 1,\n  \"periodeId\": 1,\n  \"typeEvaluationId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Créer une note > 20 (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ]
+                },
+                "description": "La valeur doit être comprise entre 0 et 20 (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"valeur\": 24.0,\n  \"inscriptionId\": 1,\n  \"enseignementId\": 1,\n  \"periodeId\": 1,\n  \"typeEvaluationId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Créer une note < 0 (400)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ]
+                },
+                "description": "La valeur doit être comprise entre 0 et 20 (400)",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"valeur\": -3.0,\n  \"inscriptionId\": 1,\n  \"enseignementId\": 1,\n  \"periodeId\": 1,\n  \"typeEvaluationId\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "F5 - Modifier une note",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/notes/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes",
+                    "1"
+                  ]
+                },
+                "description": "Modification de la valeur tant que le trimestre n'est pas clôturé",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"valeur\": 15.0,\n  \"inscriptionId\": 1,\n  \"enseignementId\": 1,\n  \"periodeId\": 1,\n  \"typeEvaluationId\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NIVEAU 2 — CONSULTATION ET RECHERCHE (F6 à F10)",
+      "item": [
+        {
+          "name": "F6. Lister les élèves d'une classe",
+          "item": [
+            {
+              "name": "F6 - Lister les élèves de la classe 1",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1/eleves",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1",
+                    "eleves"
+                  ]
+                },
+                "description": "Élèves triés par nom puis prénom, avec effectifReel et effectifMax"
+              },
+              "response": []
+            },
+            {
+              "name": "F6 - Classe inconnue (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/999999/eleves",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "999999",
+                    "eleves"
+                  ]
+                },
+                "description": "Un identifiant inconnu renvoie 404"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F7. Consulter les notes d'un élève",
+          "item": [
+            {
+              "name": "F7 - Notes d'un élève pour le trimestre 1",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/notes?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Notes groupées par matière avec type d'évaluation et date"
+              },
+              "response": []
+            },
+            {
+              "name": "F7 - Toutes les notes d'un élève (sans trimestre)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "notes"
+                  ]
+                },
+                "description": "Sans trimestre, toutes les notes sont renvoyées"
+              },
+              "response": []
+            },
+            {
+              "name": "F7 - Trimestre invalide hors 1,2,3 (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/notes?trimestre=5",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "5"
+                    }
+                  ]
+                },
+                "description": "Un trimestre hors 1, 2, 3 renvoie 400"
+              },
+              "response": []
+            },
+            {
+              "name": "F7 - Élève inconnu (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/999999/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "999999",
+                    "notes"
+                  ]
+                },
+                "description": "Identifiant inconnu renvoie 404"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F8. Consulter les notes d'une matière dans une classe",
+          "item": [
+            {
+              "name": "F8 - Notes d'une matière dans une classe",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/2/notes?matiere=2&trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "2",
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "matiere",
+                      "value": "2"
+                    },
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Notes groupées par élève avec la moyenne de la classe"
+              },
+              "response": []
+            },
+            {
+              "name": "F8 - Paramètre matière manquant (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/2/notes?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "2",
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "La matière et le trimestre sont obligatoires (400)"
+              },
+              "response": []
+            },
+            {
+              "name": "F8 - Matière non enseignée dans cette classe (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1/notes?matiere=2&trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1",
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "matiere",
+                      "value": "2"
+                    },
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Une matière non enseignée dans cette classe renvoie 400"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F9. Rechercher un élève par nom",
+          "item": [
+            {
+              "name": "F9 - Recherche partielle insensible à la casse",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves?nom=kouassi",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves"
+                  ],
+                  "query": [
+                    {
+                      "key": "nom",
+                      "value": "kouassi"
+                    }
+                  ]
+                },
+                "description": "Élèves correspondants accompagnés de leur classe"
+              },
+              "response": []
+            },
+            {
+              "name": "F9 - Recherche vide (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves?nom=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves"
+                  ],
+                  "query": [
+                    {
+                      "key": "nom",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Une recherche vide renvoie 400"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F10. Paginer la liste des notes",
+          "item": [
+            {
+              "name": "F10 - Paginer et trier par valeur décroissante",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes?page=0&size=30&sort=valeur,desc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "30"
+                    },
+                    {
+                      "key": "sort",
+                      "value": "valeur,desc"
+                    }
+                  ]
+                },
+                "description": "Page demandée avec totalElements et totalPages"
+              },
+              "response": []
+            },
+            {
+              "name": "F10 - Pagination par défaut (sans paramètre -> 30 éléments)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ]
+                },
+                "description": "Sans paramètre, première page de 30 éléments"
+              },
+              "response": []
+            },
+            {
+              "name": "F10 - Taille > 100 ramenée à 100",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/notes?page=0&size=500",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "notes"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "0"
+                    },
+                    {
+                      "key": "size",
+                      "value": "500"
+                    }
+                  ]
+                },
+                "description": "Une taille supérieure à 100 est ramenée à 100"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NIVEAU 3 — LES RÈGLES MÉTIER (F11 à F15)",
+      "item": [
+        {
+          "name": "F11. Changer un élève de classe",
+          "item": [
+            {
+              "name": "F11 - Affecter un élève à une classe de même niveau",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/affectation?nouvelleClasseId=2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "affectation"
+                  ],
+                  "query": [
+                    {
+                      "key": "nouvelleClasseId",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "description": "Change la classe de l'élève en conservant l'historique et ses notes"
+              },
+              "response": []
+            },
+            {
+              "name": "F11 - Affectation vers un niveau différent (400)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/affectation?nouvelleClasseId=4",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "affectation"
+                  ],
+                  "query": [
+                    {
+                      "key": "nouvelleClasseId",
+                      "value": "4"
+                    }
+                  ]
+                },
+                "description": "Refus 400 si le niveau diffère"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F12. Affecter une matière à un professeur dans une classe",
+          "item": [
+            {
+              "name": "F12 - Affecter matière et classe à un professeur",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/1/affectations?matiereId=1&classeId=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "1",
+                    "affectations"
+                  ],
+                  "query": [
+                    {
+                      "key": "matiereId",
+                      "value": "1"
+                    },
+                    {
+                      "key": "classeId",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Désigne quel professeur enseigne quelle matière dans quelle classe"
+              },
+              "response": []
+            },
+            {
+              "name": "F12 - Doublon autre professeur sur même matière/classe (409)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/professeurs/2/affectations?matiereId=1&classeId=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "professeurs",
+                    "2",
+                    "affectations"
+                  ],
+                  "query": [
+                    {
+                      "key": "matiereId",
+                      "value": "1"
+                    },
+                    {
+                      "key": "classeId",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "409 citant le professeur déjà affecté à cette matière dans cette classe"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F13. Définir le poids des types d'évaluation",
+          "item": [
+            {
+              "name": "F13 - Modifier le poids d'un type d'évaluation (devoir)",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/types-evaluation/devoir/poids?poids=2.0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "types-evaluation",
+                    "devoir",
+                    "poids"
+                  ],
+                  "query": [
+                    {
+                      "key": "poids",
+                      "value": "2.0"
+                    }
+                  ]
+                },
+                "description": "Met à jour le poids (strictement positif)"
+              },
+              "response": []
+            },
+            {
+              "name": "F13 - Poids invalide <= 0 (400)",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/types-evaluation/devoir/poids?poids=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "types-evaluation",
+                    "devoir",
+                    "poids"
+                  ],
+                  "query": [
+                    {
+                      "key": "poids",
+                      "value": "0"
+                    }
+                  ]
+                },
+                "description": "400 si le poids est invalide"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F14. Clôturer un trimestre",
+          "item": [
+            {
+              "name": "F14 - Clôturer un trimestre (409 si notes manquantes)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/trimestres/1/cloture",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "trimestres",
+                    "1",
+                    "cloture"
+                  ]
+                },
+                "description": "409 listant les classes et matières sans note, ou 200 si complet"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F15. Rouvrir un trimestre clôturé",
+          "item": [
+            {
+              "name": "F15 - Rouvrir avec motif valide (>= 20 caractères)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/trimestres/1/reouverture?motif=Saisie tardive des notes de rattrapage&auteur=responsable_scolarite",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "trimestres",
+                    "1",
+                    "reouverture"
+                  ],
+                  "query": [
+                    {
+                      "key": "motif",
+                      "value": "Saisie tardive des notes de rattrapage"
+                    },
+                    {
+                      "key": "auteur",
+                      "value": "responsable_scolarite"
+                    }
+                  ]
+                },
+                "description": "Rouvre le dernier trimestre clôturé et journalise date, motif et auteur"
+              },
+              "response": []
+            },
+            {
+              "name": "F15 - Motif trop court < 20 caractères (400)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/trimestres/1/reouverture?motif=Motif court",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "trimestres",
+                    "1",
+                    "reouverture"
+                  ],
+                  "query": [
+                    {
+                      "key": "motif",
+                      "value": "Motif court"
+                    }
+                  ]
+                },
+                "description": "400 si le motif est absent ou trop court"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NIVEAU 4 — LA RESTITUTION (F17 à F19)",
+      "item": [
+        {
+          "name": "F17. Calculer la moyenne par matière",
+          "item": [
+            {
+              "name": "F17 - Moyennes par matière d'un élève (Trimestre 1)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/moyennes?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "moyennes"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Moyenne pondérée par le poids du type d'évaluation, nombre de notes et matières non évaluées"
+              },
+              "response": []
+            },
+            {
+              "name": "F17 - Trimestre invalide (400)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/moyennes?trimestre=4",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "moyennes"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "4"
+                    }
+                  ]
+                },
+                "description": "Trimestre hors 1, 2, 3 renvoie 400"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F18. Calculer la moyenne générale",
+          "item": [
+            {
+              "name": "F18 - Moyenne générale d'un élève (Trimestre 1)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/1/moyenne-generale?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "1",
+                    "moyenne-generale"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Moyenne pondérée par les coefficients avec détail coefficient par coefficient"
+              },
+              "response": []
+            },
+            {
+              "name": "F18 - Élève sans note (moyenne null, non zéro)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/eleves/15/moyenne-generale?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "eleves",
+                    "15",
+                    "moyenne-generale"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Un élève sans aucune note renvoie une moyenne absente (null)"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "F19. Établir le classement d'une classe",
+          "item": [
+            {
+              "name": "F19 - Classement de la classe 1 (Trimestre 1)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/1/classement?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "1",
+                    "classement"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Élèves ordonnés par moyenne décroissante, gestion des ex æquo et élèves sans note en fin de liste"
+              },
+              "response": []
+            },
+            {
+              "name": "F19 - Classement de la classe 2 (Trimestre 1)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/2/classement?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "2",
+                    "classement"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Classement complet de la classe 2"
+              },
+              "response": []
+            },
+            {
+              "name": "F19 - Classe inconnue (404)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/classes/999999/classement?trimestre=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "classes",
+                    "999999",
+                    "classement"
+                  ],
+                  "query": [
+                    {
+                      "key": "trimestre",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Identifiant de classe inconnu renvoie 404"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
