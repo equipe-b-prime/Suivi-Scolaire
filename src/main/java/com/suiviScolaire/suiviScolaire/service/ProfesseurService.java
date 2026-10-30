@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.suiviScolaire.suiviScolaire.entity.Classe;
+import com.suiviScolaire.suiviScolaire.entity.Enseignement;
 import com.suiviScolaire.suiviScolaire.entity.Matiere;
 import com.suiviScolaire.suiviScolaire.entity.Professeur;
 import com.suiviScolaire.suiviScolaire.repository.ClasseRepository;
@@ -232,14 +233,31 @@ public ProfesseurService(ProfesseurRepository professeurRepository,
                 .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
 
         // Vérifier la règle : une matière ne peut avoir qu'un seul professeur par classe
-        if (professeur.getId() != null && professeurRepository.existsByMatiereIdAndClasseId(matiereId, classeId)) {
-            // Vérifier que ce n'est pas le même professeur qui est déjà affecté
-            if (!professeur.getMatiereId().equals(matiereId)) {
-                throw new DoublonRessourceException("Un professeur est déjà affecté à la matière '" + matiere.getNom()
+        List<Enseignement> existants = enseignementRepository.findByMatiereIdAndClasseId(matiereId, classeId);
+        for (Enseignement ens : existants) {
+            if (!ens.getProfesseur().getId().equals(professeurId)) {
+                Professeur autre = ens.getProfesseur();
+                throw new DoublonRessourceException("Le professeur " + autre.getNom() + " " + autre.getPrenom()
+                        + " est déjà affecté à la matière '" + matiere.getNom()
+                        + "' dans la classe '" + classe.getNom() + "'.");
+            }
+        }
+        List<Professeur> profsExistants = professeurRepository.findByMatiereIdAndClasseId(matiereId, classeId);
+        for (Professeur autre : profsExistants) {
+            if (!autre.getId().equals(professeurId)) {
+                throw new DoublonRessourceException("Le professeur " + autre.getNom() + " " + autre.getPrenom()
+                        + " est déjà affecté à la matière '" + matiere.getNom()
                         + "' dans la classe '" + classe.getNom() + "'.");
             }
         }
 
+        if (existants.isEmpty()) {
+            enseignementRepository.save(Enseignement.builder()
+                    .professeur(professeur)
+                    .matiere(matiere)
+                    .classe(classe)
+                    .build());
+        }
         professeur.setMatiereId(matiereId);
         professeur.setClasseId(classeId);
         return toDto(professeurRepository.save(professeur));

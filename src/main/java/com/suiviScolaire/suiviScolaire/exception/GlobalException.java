@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -178,5 +179,35 @@ public class GlobalException {
         reponse.setHasError(true);
         reponse.setStatus(new Status(HttpStatus.CONFLICT.value(), "Règle métier non respectée"));
         return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
+    }
+
+    /**
+     * Gère les tentatives de modification lorsque qu'un trimestre est clôturé.
+     *
+     * @param ex L'exception de trimestre clôturé.
+     * @return ResponseEntity<Response<String>> Le message d'erreur encapsulé.
+     */
+    @ExceptionHandler(TrimestreClotureException.class)
+    public ResponseEntity<Response<String>> handleTrimestreCloture(TrimestreClotureException ex) {
+        Response<String> reponse = new Response<>(ex.getMessage());
+        reponse.setNombre(1L);
+        reponse.setHasError(true);
+        reponse.setStatus(new Status(HttpStatus.CONFLICT.value(), "Trimestre clôturé"));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(reponse);
+    }
+
+    /**
+     * Gère les paramètres de requête obligatoires manquants.
+     *
+     * @param ex L'exception de paramètre manquant.
+     * @return ResponseEntity<Response<String>> Le message d'erreur encapsulé.
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Response<String>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        Response<String> reponse = new Response<>("Le paramètre '" + ex.getParameterName() + "' est obligatoire.");
+        reponse.setNombre(1L);
+        reponse.setHasError(true);
+        reponse.setStatus(new Status(HttpStatus.BAD_REQUEST.value(), "Paramètre obligatoire manquant"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(reponse);
     }
 }

@@ -29,10 +29,7 @@ public class NoteController {
             @Parameter(description = "Nombre d'éléments par page") @RequestParam(defaultValue = "30") int size,
             @Parameter(description = "Champ et sens du tri (ex: 'valeur' ou 'valeur,desc')") @RequestParam(defaultValue = "id") String sort) {
         Page<ResponseDto> resultat = noteService.getAllPage(page, size, sort);
-        Response<ResponseDto> response = new Response<>(resultat.getContent());
-        response.setTotalElements(resultat.getTotalElements());
-        response.setTotalPages((long) resultat.getTotalPages());
-        return response;
+        return new Response<>(resultat.getContent(), resultat.getTotalElements(), (long) resultat.getTotalPages(), resultat.getNumber(), resultat.getSize());
     }
 
     @Operation(summary = "Obtenir une note par ID", description = "Retourne les détails d'une note spécifique à partir de son identifiant.")

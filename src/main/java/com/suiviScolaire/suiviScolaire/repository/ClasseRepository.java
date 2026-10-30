@@ -21,7 +21,7 @@ public interface ClasseRepository extends JpaRepository<Classe, Long> {
      * @param classeId L'identifiant de la classe.
      * @return Le nombre d'élèves inscrits.
      */
-    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.classe.id = :classeId")
+    @Query("SELECT COUNT(i) FROM Inscription i WHERE i.classe.id = :classeId AND i.dateFin IS NULL")
     long countElevesByClasse(@Param("classeId") Long classeId);
 
     /**
@@ -30,7 +30,7 @@ public interface ClasseRepository extends JpaRepository<Classe, Long> {
      * @param classeIds Les identifiants des classes.
      * @return Une liste de paires (identifiant de classe, nombre d'élèves).
      */
-    @Query("SELECT i.classe.id, COUNT(i) FROM Inscription i WHERE i.classe.id IN :classeIds GROUP BY i.classe.id")
+    @Query("SELECT i.classe.id, COUNT(i) FROM Inscription i WHERE i.classe.id IN :classeIds AND i.dateFin IS NULL GROUP BY i.classe.id")
     List<Object[]> countElevesByClasseIds(@Param("classeIds") List<Long> classeIds);
 
     /**

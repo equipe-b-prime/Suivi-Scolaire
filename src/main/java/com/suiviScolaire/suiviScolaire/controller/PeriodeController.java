@@ -50,7 +50,8 @@ public class PeriodeController {
     @PostMapping("/{numero}/reouverture")
     public ResponseEntity<Response<String>> reouvertureTrimestre(
             @Parameter(description = "Numéro du trimestre à rouvrir (1, 2 ou 3)", example = "1", required = true) @PathVariable Integer numero,
-            @Parameter(description = "Motif justifiant la réouverture (minimum 20 caractères)", example = "Saisie tardive des notes d'évaluation de rattrapage en mathématiques", required = true) @RequestParam String motif) {
+            @Parameter(description = "Motif justifiant la réouverture (minimum 20 caractères)", example = "Saisie tardive des notes d'évaluation de rattrapage en mathématiques", required = true) @RequestParam String motif,
+            @Parameter(description = "Auteur de la réouverture (optionnel)") @RequestParam(defaultValue = "responsable_scolarite") String auteur) {
         if (motif == null || motif.trim().length() < 20) {
             throw new MotifRouvreInvalideException("Le motif de réouverture doit faire au moins 20 caractères.");
         }
@@ -84,12 +85,13 @@ public class PeriodeController {
         periode.setCloture(false);
         periode.setMotifRouvre(motif);
         periode.setDateRouvre(LocalDate.now());
+        periode.setUtilisateurRouvre(auteur);
         periodeRepository.save(periode);
 
         Response<String> reponse = new Response<>("Trimestre " + numero + " réouvert avec succès. Motif: " + motif);
         reponse.setHasError(false);
         reponse.setNombre(1L);
-        reponse.setStatus(new Status(HttpStatus.OK.value(), "Trimestre rouvert"));
+        reponse.setStatus(new Status(800, "Trimestre rouvert"));
         return ResponseEntity.ok(reponse);
     }
 

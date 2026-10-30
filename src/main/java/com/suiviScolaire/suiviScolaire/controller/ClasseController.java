@@ -36,7 +36,7 @@ public class ClasseController {
     public Response<ResponseDto> getAll(
             @Parameter(description = "Numéro de la page (commence à 0)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Nombre d'éléments par page") @RequestParam(defaultValue = "10") int taille) {
-        return new Response<>(classeService.getAll(page, taille).getContent());
+        return new Response<>(classeService.getAll(page, taille).getContent(), classeService.getAll(page, taille).getTotalElements(), classeService.getAll(page, taille).getTotalPages(), page, taille);
     }
 
     @Operation(summary = "Obtenir les élèves d'une classe", description = "Récupère l'effectif et la liste des élèves d'une classe triés par nom puis prénom.")

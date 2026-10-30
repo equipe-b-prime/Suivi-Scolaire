@@ -59,4 +59,6 @@ public interface ProfesseurRepository extends JpaRepository<Professeur, Long> {
      * @return true si un professeur est déjà affecté.
      */
     boolean existsByMatiereIdAndClasseId(Long matiereId, Long classeId);
+
+    List<Professeur> findByMatiereIdAndClasseId(Long matiereId, Long classeId);
 }

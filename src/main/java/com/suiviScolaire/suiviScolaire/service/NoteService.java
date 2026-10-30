@@ -143,6 +143,7 @@ public class NoteService extends AbstractCrudService {
                          TypeEvaluation typeEvaluation) {
         return Note.builder()
                 .valeur(noteRequest.getValeur())
+                .dateSaisie(java.time.LocalDate.now())
                 .inscription(inscription)
                 .enseignement(enseignement)
                 .periode(periode)

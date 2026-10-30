@@ -48,4 +48,13 @@ public interface EnseignementRepository extends JpaRepository<Enseignement, Long
      * @return true si le professeur est affecté à une matière.
      */
     boolean existsByProfesseurId(Long professeurId);
+
+    /**
+     * Récupère les enseignements pour une matière et une classe données.
+     *
+     * @param matiereId L'identifiant de la matière.
+     * @param classeId L'identifiant de la classe.
+     * @return La liste des enseignements correspondants.
+     */
+    List<Enseignement> findByMatiereIdAndClasseId(Long matiereId, Long classeId);
 }

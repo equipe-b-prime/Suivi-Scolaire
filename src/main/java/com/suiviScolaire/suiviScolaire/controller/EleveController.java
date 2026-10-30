@@ -40,7 +40,7 @@ public class EleveController {
             }
             return new Response<>(eleveService.searchByNom(nom));
         }
-        return new Response<>(eleveService.getAll(page, taille).getContent());
+        return new Response<>(eleveService.getAll(page, taille).getContent(), eleveService.getAll(page, taille).getTotalElements(), eleveService.getAll(page, taille).getTotalPages(), page, taille);
     }
 
     @Operation(summary = "Obtenir les notes d'un élève", description = "Récupère les notes d'un élève regroupées par matière, avec filtrage optionnel par trimestre.")

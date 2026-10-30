@@ -164,6 +164,15 @@ public class EleveService extends AbstractCrudService {
             throw new DoublonRessourceException("Un élève avec le matricule '"
                     + eleveRequest.getMatricule() + "' existe déjà.");
         }
+        if (eleveRequest.getClasseId() != null) {
+            Classe classeCible = classeRepository.findById(eleveRequest.getClasseId())
+                    .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
+            long effectifReel = classeRepository.countElevesByClasse(classeCible.getId());
+            if (effectifReel >= classeCible.getEffectifMax()) {
+                throw new IllegalArgumentException("La classe '" + classeCible.getNom()
+                        + "' est pleine (" + effectifReel + "/" + classeCible.getEffectifMax() + ")");
+            }
+        }
         Eleve eleve = Eleve.builder()
                 .matricule(eleveRequest.getMatricule())
                 .nom(eleveRequest.getNom())
@@ -296,26 +305,18 @@ public class EleveService extends AbstractCrudService {
                 .orElseThrow(() -> new NotFoundException("Classe non trouvée"));
         Annee annee = resoudreAnnee(anneeId);
         List<Inscription> inscriptions = inscriptionRepository.findByEleveId(eleve.getId());
-        if (inscriptions.isEmpty()) {
-            inscriptionRepository.save(Inscription.builder()
-                    .eleve(eleve)
-                    .classe(classe)
-                    .annee(annee)
-                    .dateDebut(LocalDate.now())
-                    .build());
-        } else {
-            Inscription inscription = inscriptions.get(0);
-            // Conserver l'ancienne affectation avec ses dates
-            if (inscription.getDateFin() == null) {
-                inscription.setDateFin(LocalDate.now());
-                inscriptionRepository.save(inscription);
+        for (Inscription ancienne : inscriptions) {
+            if (ancienne.getDateFin() == null) {
+                ancienne.setDateFin(LocalDate.now());
+                inscriptionRepository.save(ancienne);
             }
-            // Créer nouvelle inscription ou mettre à jour
-            inscription.setClasse(classe);
-            inscription.setAnnee(annee);
-            inscription.setDateDebut(LocalDate.now());
-            inscriptionRepository.save(inscription);
         }
+        inscriptionRepository.save(Inscription.builder()
+                .eleve(eleve)
+                .classe(classe)
+                .annee(annee)
+                .dateDebut(LocalDate.now())
+                .build());
     }
 
     /**

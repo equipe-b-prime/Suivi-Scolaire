@@ -29,7 +29,7 @@ public interface EleveRepository extends JpaRepository<Eleve, Long> {
      * @param eleveId L'identifiant de l'élève.
      * @return List<Classe> Les classes de l'élève.
      */
-    @Query("SELECT i.classe FROM Inscription i WHERE i.eleve.id = :eleveId ORDER BY i.annee.id DESC")
+    @Query("SELECT i.classe FROM Inscription i WHERE i.eleve.id = :eleveId ORDER BY CASE WHEN i.dateFin IS NULL THEN 0 ELSE 1 END, i.id DESC")
     List<Classe> findClassesByEleve(@Param("eleveId") Long eleveId);
 
     /**

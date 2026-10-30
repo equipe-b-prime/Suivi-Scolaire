@@ -1,13 +1,19 @@
 package com.suiviScolaire.suiviScolaire.service;
 
+import com.suiviScolaire.suiviScolaire.dto.MoyenneGeneraleResponseDto;
+import com.suiviScolaire.suiviScolaire.entity.Classe;
 import com.suiviScolaire.suiviScolaire.entity.Eleve;
 import com.suiviScolaire.suiviScolaire.entity.Periode;
+import com.suiviScolaire.suiviScolaire.repository.ClasseRepository;
 import com.suiviScolaire.suiviScolaire.repository.EleveRepository;
+import com.suiviScolaire.suiviScolaire.repository.InscriptionRepository;
 import com.suiviScolaire.suiviScolaire.repository.PeriodeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -17,23 +23,34 @@ import java.util.List;
 @Service
 public class SignalementService {
 
+    private static final Logger log = LoggerFactory.getLogger(SignalementService.class);
+
     private final EleveRepository eleveRepository;
     private final PeriodeRepository periodeRepository;
+    private final ClasseRepository classeRepository;
+    private final InscriptionRepository inscriptionRepository;
+    private final NoteService noteService;
 
     public SignalementService(EleveRepository eleveRepository,
-                              PeriodeRepository periodeRepository) {
+                              PeriodeRepository periodeRepository,
+                              ClasseRepository classeRepository,
+                              InscriptionRepository inscriptionRepository,
+                              NoteService noteService) {
         this.eleveRepository = eleveRepository;
         this.periodeRepository = periodeRepository;
+        this.classeRepository = classeRepository;
+        this.inscriptionRepository = inscriptionRepository;
+        this.noteService = noteService;
     }
 
     /**
      * Tâche planifiée exécutée chaque semaine (le lundi à 8h00).
-     * Signale les élèves en difficulté : moyenne < 8 ou écart > 4 points.
+     * Signale les élèves en difficulté : moyenne générale < 8 ou chute > 4 points depuis le trimestre précédent.
+     * Produit une alerte par classe avec la moyenne et l'écart constaté.
      * Un élève déjà signalé ce trimestre ne l'est pas deux fois.
      */
     @Scheduled(cron = "0 0 8 * * MON")
     public void detecterElevesDifficulte() {
-        // Récupérer le trimestre en cours (le plus récent clôturé ou en cours)
         Periode trimestreEnCours = periodeRepository.findTopByOrderByNumeroDesc()
                 .orElse(null);
 
@@ -42,40 +59,46 @@ public class SignalementService {
         }
 
         Integer numeroTrimestre = trimestreEnCours.getNumero();
-        List<Eleve> eleves = eleveRepository.findAll();
+        List<Classe> classes = classeRepository.findAll();
 
-        for (Eleve eleve : eleves) {
-            // Vérifier si l'élève a déjà été signalé ce trimestre
-            if (Boolean.TRUE.equals(eleve.getEstSigle()) && eleve.getTrimestreSigle() != null && eleve.getTrimestreSigle() == numeroTrimestre) {
-                continue; // Déjà signalé ce trimestre, on saute
-            }
+        for (Classe classe : classes) {
+            List<Eleve> elevesClasse = inscriptionRepository.findElevesByClasseId(classe.getId());
+            for (Eleve eleve : elevesClasse) {
+                if (Boolean.TRUE.equals(eleve.getEstSigle())
+                        && eleve.getTrimestreSigle() != null
+                        && eleve.getTrimestreSigle().equals(numeroTrimestre)) {
+                    continue;
+                }
 
-            // Règles de signalement :
-            // - Moyenne générale du trimestre en cours < 8
-            // - Ou l'écart a chuté de plus de 4 points depuis le trimestre précédent
-            boolean signaler = false;
-            String raison = "";
+                MoyenneGeneraleResponseDto moyCouranteDto = noteService.getMoyenneGenerale(eleve.getId(), numeroTrimestre);
+                BigDecimal moyCourante = moyCouranteDto.getMoyenneGenerale();
+                BigDecimal ecart = null;
 
-            if (eleve.getMoyenneTrimestreCourant() != null
-                    && eleve.getMoyenneTrimestreCourant().compareTo(BigDecimal.valueOf(8)) < 0) {
-                signaler = true;
-                raison = "Moyenne générale du trimestre " + numeroTrimestre + " inférieure à 8 (" + eleve.getMoyenneTrimestreCourant() + ")";
-            }
+                if (moyCourante != null && numeroTrimestre > 1) {
+                    MoyenneGeneraleResponseDto moyPrecDto = noteService.getMoyenneGenerale(eleve.getId(), numeroTrimestre - 1);
+                    if (moyPrecDto.getMoyenneGenerale() != null) {
+                        ecart = moyPrecDto.getMoyenneGenerale().subtract(moyCourante);
+                    }
+                }
 
-            if (eleve.getEcartTrimestrePrec() != null
-                    && eleve.getEcartTrimestrePrec().compareTo(BigDecimal.valueOf(4)) > 0) {
-                signaler = true;
-                raison = raison + " (écart trimestre précédent de " + eleve.getEcartTrimestrePrec() + " points > 4)";
-            }
+                boolean signaler = false;
+                if (moyCourante != null && moyCourante.compareTo(BigDecimal.valueOf(8)) < 0) {
+                    signaler = true;
+                }
+                if (ecart != null && ecart.compareTo(BigDecimal.valueOf(4)) > 0) {
+                    signaler = true;
+                }
 
-            if (signaler) {
-                // Signaler l'élève
-                eleve.setEstSigle(true);
-                eleve.setTrimestreSigle(numeroTrimestre);
-                eleveRepository.save(eleve);
+                if (signaler) {
+                    eleve.setMoyenneTrimestreCourant(moyCourante);
+                    eleve.setEcartTrimestrePrec(ecart);
+                    eleve.setEstSigle(true);
+                    eleve.setTrimestreSigle(numeroTrimestre);
+                    eleveRepository.save(eleve);
 
-                // Ici, on pourrait produire une alerte (log, email, etc.)
-                // Pour l'instant, on laisse un log implicite via le save
+                    log.warn("[ALERTE CLASSE {}] Élève {} {} en difficulté au trimestre {} : moyenne = {}, écart = {}",
+                            classe.getNom(), eleve.getNom(), eleve.getPrenom(), numeroTrimestre, moyCourante, ecart);
+                }
             }
         }
     }
